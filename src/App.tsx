@@ -1,11 +1,16 @@
+import { Outlet } from 'react-router-dom';
+
 function App() {
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-900">
-      <h1 className="text-3xl font-bold text-blue-500">
-        Hello, Tailwind!
-      </h1>
+    <div>
+      <header className="p-4 bg-gray-800 text-white">
+        <h1>Vibe Playground</h1>
+      </header>
+      <main className="p-4">
+        <Outlet />
+      </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
