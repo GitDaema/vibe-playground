@@ -28,7 +28,7 @@
     3. 커밋 메시지 제안 (Conventional Commit 1~2줄)
     4. AI 관여 표시: `[ai-assist]`
 
-[Day 1 Gemini 전체 대화 로그 보기](.\gemini_cli_logs\Day1-Log.md)
+[Day 1 Gemini 전체 대화 로그 보기](./gemini_cli_logs/Day1-Log.md)
 
 #### 프롬프트 적용 결과
 - 스펙에 명시된 초기 개발 환경 구축
@@ -38,9 +38,9 @@
 
 #### 문제 및 해결 과정
 1.  **MCP를 이용한 github 연동 과정에서 Gemini CLI 접근 권한 문제 발생**
-    -   토큰 생성 후 `.gemini\settings.json`에 명시하여 해결
+    -   토큰 생성 후 `.gemini/settings.json`에 명시하여 해결
 2.  **푸시 과정에서 보안 문제 발생**
-    -   보안에 민감한 토큰이 포함된 `.gemini\settings.json`에 대해 `.gitignore` 업데이트 및 추적 제거
+    -   보안에 민감한 토큰이 포함된 `.gemini/settings.json`에 대해 `.gitignore` 업데이트 및 추적 제거
 3.  **추적 제거 후에도 이전 커밋에 포함된 토큰으로 인한 푸시 보안 문제 해결 실패**
     -   수동으로 깃 저장소 초기화 후 재커밋 요청
 
