@@ -23,7 +23,10 @@
 
 ## 4. 개발 계획 (7일)
 
-- **1-2일차:** 프로젝트 환경 설정, `codec` 및 `validator` 구현 및 테스트.
+- **1-2일차: (진행중)** 프로젝트 환경 설정, `codec` 및 `validator` 구현 및 테스트.
+  - **완료:** Vite, React, TS, Tailwind CSS 초기 설정.
+  - **완료:** `core/engine.ts` (결정론적 엔진) 및 `core/dsl.ts` (제네릭 규칙 실행기) 초안 구현 및 테스트 통과.
+  - **예정:** `codec/shareCode.ts` 및 `validator` 구현.
 - **3-4일차:** 샌드박스 엔진 코어 및 DSL 런타임 구현.
 - **5일차:** Build/Play 모드 UI 구현 및 Gemini 연동.
 - **6일차:** Proof/Replay 시스템 구현 및 반응형 디자인 조정.

@@ -21,7 +21,7 @@ describe('Day3 smoke: Engine × DSL minimal integration', () => {
     expect(state.score).toBe(1);
 
     // 4) 엔진 tick 진행(running=true일 때만 누적)
-    // 주: 현재 엔진은 단위 제한이 없어 단순 가산만 수행
+    // 현재 엔진은 단위 제한이 없어 단순 가산만 수행
     engine.update(0.016); // 약 1프레임(60fps 가정)
     engine.update(0.016);
     const afterTicks = engine.getState();
