@@ -1,16 +1,14 @@
-import { Outlet } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 
-function App() {
+export default function App() {
   return (
-    <div>
-      <header className="p-4 bg-gray-800 text-white">
-        <h1>Vibe Playground</h1>
-      </header>
-      <main className="p-4">
-        <Outlet />
-      </main>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold">Vibe Playground: Graph Puzzle</h1>
+      <p className="text-slate-600">노서버 · 자연어 기반 그래프 퍼즐 샌드박스</p>
+      <div className="mt-4">
+        <Link className="px-3 py-2 rounded bg-blue-600 text-white" to="/playground">Playground 열기</Link>
+      </div>
     </div>
   );
 }
-
-export default App;

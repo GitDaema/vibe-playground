@@ -1,18 +1,9 @@
-import { createBrowserRouter } from 'react-router-dom';
-import App from './App';
-
-// 임시 홈 페이지 컴포넌트
-const HomePage = () => <div>Home Page</div>;
+import React from "react";
+import { createBrowserRouter } from "react-router-dom";
+import App from "./App";
+import Playground from "./ui/Playground";
 
 export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-    ],
-  },
+  { path: "/", element: <App /> },
+  { path: "/playground", element: <Playground /> },
 ]);

@@ -1,4 +1,4 @@
-import { Rule } from '../core';
+import type { Rule } from '../core';
 
 /**
  * Defines the structure of a challenge, including its world, goals, and rules.
