@@ -8,6 +8,12 @@
 ---
 
 ## 개발 과정
+- **기록 방법**:
+    1. 작업은 일 단위로 나누어 기록
+    2. PRD 마스터 프롬프트 제외 일일 1회 ChatGPT + Gemini로 페르소나 프롬프트 작성
+    3. 작성한 MVP로 Gemini CLI 대화 시작, "/chat save 태그이름" 명령어로 저장 
+    4. 저장한 내용을 "/chat share 파일이름" 명령어로 마크다운 파일로 내보내 현 문서와 연결
+    5. 이외에는 수작업으로 작성한 뒤 일관된 마크다운 문법을 위해 Gemini 사용
 
 ### Day 1 - 환경 세팅 및 codec 모듈 구현
 
@@ -160,4 +166,189 @@
 - 엔진과 DSL을 스텁 형태로 구분하면 잦은 정책 변경에도 엔진의 안정성을 확보하며 독립적인 개발이 가능.
 - files:// MCP를 이용해 @로 파일에 접근하면 명시적 컨텍스트로 인식해 정확도 상승.
 
-### Day 3
+### Day 3 - 프로젝트 방향 재정립 및 시각화
+
+#### GEMINI CLI 사용 프롬프트(1차 시도 실패로 인한 2차 프롬프트)
+
+프로젝트 방향을 다시 재정립할게. Day3 프롬프트를 아래와 같이 리셋해줘.
+
+# 역할
+너는 “Vibe Playground” 프로젝트의 AI 협업 파트너로,  
+현재 Day1~2까지의 개발 결과를 기반으로  
+프로젝트 방향을 **그래프 기반 퍼즐 샌드박스**로 재정립한다.  
+
+이제부터 이 프로젝트는 **물리 시뮬레이션이 아닌, AI 기반 그래프 퍼즐 제작·공유·풀이 웹앱**으로 발전하며,  
+GEMINI.md와 README.md를 그에 맞게 갱신해야 한다.
+
+---
+
+## 🎯 프로젝트 개요 (갱신 목표)
+
+### 프로젝트명
+**Vibe Playground: Graph Puzzle Sandbox**
+
+### 핵심 목표
+1. **서버 없는 환경**
+   - 모든 데이터는 LocalStorage + Base64 해시를 통해 처리
+   - 서버, DB, 백엔드 전혀 사용하지 않음
+2. **AI 협업**
+   - Gemini CLI가 자연어를 구조화된 Graph DSL(JSON)으로 변환
+   - 예: “A에서 B로 연결해줘.” → `{ "action":"add_edge","from":"A","to":"B" }`
+3. **문제 제작과 공유**
+   - 사용자는 자연어로 그래프를 생성하고 목표(start/goal)를 설정  
+   - 결과를 직렬화·압축해 **도전 코드(Challenge Code)** 로 공유 가능
+4. **문제 풀이와 검증**
+   - 다른 사용자가 공유 코드를 입력하면 그래프 복원  
+   - 자연어로 탐색 규칙 제시(BFS/DFS 등)  
+   - Gemini가 이를 JSON Rule로 변환 후 시뮬레이션 실행  
+   - 성공 시 **Proof Code** 자동 생성 및 공유 가능
+
+---
+
+## ⚙️ 기술 구조 (Day3 기준)
+
+### A. Core Layer
+- `src/core/engine.ts` → tick 기반 결정론적 시뮬레이터  
+- `src/core/dsl.ts` → 이벤트/액션 기반 Rule 실행기  
+
+### B. Graph Layer
+- `src/graph/model.ts` → Node, Edge, Graph 구조 정의  
+- `src/graph/engine.ts` → 탐색 루프(visit, discover, queue/stack)  
+- `src/graph/actions.ts` → markColor, enqueue, visitNext 등 동작 정의  
+- `src/graph/rules.ts` → BFS/DFS Rule 템플릿
+
+### C. AI & NLU Layer
+- `src/nlu/mapper.ko.ts` → 제한된 한국어(CNL) → Rule JSON 변환  
+- `src/schemas/graph-rule.schema.json` → Ajv 스키마 검증  
+- `src/codec/shareCode.ts` → LZ + Base64url + CRC32 직렬화/복원  
+
+### D. UI Layer
+- `src/ui/BuildMode.tsx` → 그래프 제작 모드 (노드/간선 추가, 목표 설정)  
+- `src/ui/PlayMode.tsx` → 도전 모드 (규칙 입력, 시뮬레이션 실행)  
+- `src/ui/GraphCanvas.tsx` → 그래프 시각화 및 탐색 상태 표시  
+- `src/ui/RuleEditor.tsx` → 자연어 규칙 입력 및 Rule 미리보기  
+
+---
+
+## 💬 자연어 → DSL 변환 예시 (한국어 CNL)
+
+| 사용자 입력 | Gemini 해석 결과 |
+|--------------|------------------|
+| “노드 A, B, C를 만들어줘.” | `{"action":"add_nodes","nodes":["A","B","C"]}` |
+| “A에서 B, C로 연결해줘.” | `{"action":"add_edges","edges":[["A","B"],["A","C"]]}` |
+| “A를 시작, F를 목표로 해줘.” | `{"action":"set_goal","start":"A","goal":"F"}` |
+| “너비 우선 탐색으로 실행해.” | BFS 규칙 JSON 템플릿 |
+| “결과를 공유 코드로 만들어줘.” | `{"action":"export_challenge"}` |
+
+---
+
+## 🎮 시나리오 예시 (사용자 체험 흐름)
+
+### 🧩 1️⃣ 문제 제작자 모드
+1. 사용자가 입력:  
+   > “노드 A, B, C, D 만들어줘.”  
+   > “A에서 B, C로 연결하고, B는 D로 이어줘.”  
+   > “A를 시작, D를 목표로 해줘.”
+2. Gemini CLI 해석 결과:  
+   - Graph JSON 생성  
+   - `v1_Graph_A2dDkWc==` 공유 코드 생성
+3. 사용자는 이 코드를 친구에게 전달
+
+---
+
+### 🧩 2️⃣ 도전자 모드
+1. 친구가 “도전 코드”를 입력 → 문제 로드  
+2. 동일 그래프 렌더링  
+3. 자연어로 탐색 규칙 입력:
+   > “방문한 노드는 초록색으로 표시해.”  
+   > “아직 방문하지 않은 노드는 큐에 추가해.”  
+   > “큐가 빌 때까지 다음 노드 방문을 반복해.”
+4. Gemini CLI 변환 결과:
+   ```json
+   [
+     {"event":"visit","action":"markColor","params":{"color":"green"}},
+     {"event":"discover","condition":"!visited(neighbor)","action":"enqueue"},
+     {"event":"tick","condition":"!queue.empty","action":"visitNext"}
+   ]
+   ```
+5. 시뮬레이션 실행 → A→B→C→D 탐색 후 목표 도달  
+   - “Goal Reached in 4 steps!” 표시  
+   - Proof Code 자동 생성 → `proof_v1_BFS_4steps_Z19Q==`
+
+---
+
+## 🧠 AI 협업 구조
+
+| 단계 | AI 역할 | 설명 |
+|------|----------|------|
+| 1 | 자연어 → DSL(JSON) | 명령 의도 분석, 그래프 구조 변환 |
+| 2 | Rule 템플릿 추천 | BFS, DFS 규칙 자동 생성 |
+| 3 | JSON 검증 | Ajv 스키마로 Rule 유효성 검사 |
+| 4 | 직렬화 | LZ + Base64url + CRC32 |
+| 5 | 복원 | Challenge Code → JSON 복원 후 실행 |
+
+---
+
+## 🧩 교수님 평가 대비 요약
+
+| 항목 | 설명 |
+|------|------|
+| **창의성** | 사용자가 언어로 그래프를 직접 설계하고 퍼즐을 만든다 |
+| **실용성** | 탐색 알고리즘·조건·반복 구조를 시각적으로 체험 가능 |
+| **기술적 도전성** | AI 변환기 + DSL + 직렬화/복원 시스템 구축 |
+| **AI 협업성** | 자연어 → 구조화 → 실행의 완전 자동화 루프 |
+
+---
+
+## 📑 문서 갱신 요청
+
+Gemini CLI는 아래 두 문서를 자동 재작성해야 한다:
+
+1. **GEMINI.md**
+   - 프로젝트 목적, AI 협업 구조, CNL → Rule 변환 흐름, 예시 포함
+   - “그래프 퍼즐 샌드박스” 중심으로 작성
+   - 자연어 입력/해시 공유/리플레이 개념 포함
+
+2. **README.md**
+   - 전체 개요, 주요 기능, 실행 방법, 사용 예시, 기술 스택 명시
+   - “서버 없는 AI 그래프 퍼즐 샌드박스” 문구 포함
+
+---
+
+## 🧾 출력 요구
+- 수정된 **GEMINI.md** 와 **README.md** 전체 출력
+- Markdown 형식 유지
+- 각 문서 상단에 `[ai-assist] auto-update` 표기
+- 문서 내 날짜는 `2025-10-22`로 갱신
+
+---
+[Day 3 Gemini 전체 대화 로그 보기](./gemini_cli_logs/Day3-Log.md)
+[Day 3 Codex 전체 대화 로그 보기](./codex_logs/Day3-Log-Codex.md)
+
+#### 프롬프트 적용 결과
+- MVP 철학에 따른 최소한의 기능 구현에 집중하여 프로젝트 방향을 재정립하는 데 성공
+- 주제를 변경하면서 발생한 미사용 코드 자동 삭제  
+- 웹 내 입력 창에서 제한된 텍스트 패턴을 감지해 그래프 생성 및 탐색하는 1차 목표 구현
+
+![실행 화면 스크린샷](./screenshots/day3-1-graph.png)
+
+#### 문제 및 해결 과정
+1.  **초회 프롬프트를 이용한 물리 퍼즐 제작 실패**
+    -   Gemini CLI와 Codex를 함께 사용하여 물리 엔진 구현을 시도했으나 실패
+    -   개발 기간을 고려해 실현 가능한 주제로 프로젝트 재정립
+
+2.  **Gemini CLI의 반복적인 동일 오류 해결 실패**
+    -   Gemini CLI와 Codex를 병행하는 에이전트 오케스트레이션 기법 선택
+    -   Gemini CLI는 프로젝트 전체 설계 및 스크립트 작성, 단일 버그 수정 할당
+    -   Codex는 코드 분석, 복합 버그 수정, 리팩토링 할당
+    -   둘의 결과를 종합하여 핵심 문제 발견, 오류 해결 성공
+
+3.  **원격 저장소와 로컬 Git 계정 불일치 문제**
+    -   GitHub 원격 저장소에 푸시된 커밋의 작성자가 의도하지 않은 서브 계정임을 확인
+    -   VS Code 연동 계정과 로컬 컴퓨터의 Git 전역 설정에 등록된 계정이 다른 것이 원인
+    -   본계정 정보로 올바르게 재설정한 뒤 테스트용 커밋 푸시를 통해 해결
+
+#### 학습 내용
+- Gemini CLI와 Codex를 함께 사용해 상황 별로 적절한 도구를 호출하는 에이전트 기법 사용.
+- LLM을 대체하기 위해 제한된 CNL -> 정규식/토큰 매핑 -> json -> ajv 파이프라인 분석.
+- 웹 어플리케이션 개발 과정에서 브라우저 콘솔을 이용한 디버깅의 중요성을 확인. 
