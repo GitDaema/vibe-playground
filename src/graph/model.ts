@@ -1,61 +1,75 @@
 export interface Node {
   id: string;
-  // 추가 속성 (예: color, visited)은 Day4에서 상태 관리의 일부로 다룹니다.
+  x: number; // Added for UI positioning
+  y: number; // Added for UI positioning
 }
 
 export interface Edge {
-  from: string;
-  to: string;
+  id: string; // Added for unique key in UI
+  source: string; // Renamed from 'from'
+  target: string; // Renamed from 'to'
+  requiresItem?: string;
 }
 
 export class Graph {
   public nodes: Node[] = [];
   public edges: Edge[] = [];
-  private adj: Map<string, string[]> = new Map();
+  public startNodeId?: string;
+  public goalNodeId?: string;
+
+  constructor(initialNodes: Node[] = [], initialEdges: Edge[] = [], startNodeId?: string, goalNodeId?: string) {
+    this.nodes = initialNodes;
+    this.edges = initialEdges;
+    this.startNodeId = startNodeId;
+    this.goalNodeId = goalNodeId;
+  }
 
   /**
    * 그래프에 노드를 추가합니다. 이미 노드가 존재하면 아무 작업도 수행하지 않습니다.
-   * @param id 추가할 노드의 ID
+   * @param newNode 추가할 노드 객체
    */
-  addNode(id: string): void {
-    if (!this.nodes.some(node => node.id === id)) {
-      this.nodes.push({ id });
-      this.adj.set(id, []);
+  addNode(newNode: Node): void {
+    if (!this.nodes.some(node => node.id === newNode.id)) {
+      this.nodes.push(newNode);
     }
   }
 
   /**
    * 그래프에 여러 노드를 한 번에 추가합니다.
-   * @param ids 추가할 노드 ID 배열
+   * @param newNodes 추가할 노드 객체 배열
    */
-  addNodes(ids: string[]): void {
-    ids.forEach(id => this.addNode(id));
+  addNodes(newNodes: Node[]): void {
+    newNodes.forEach(node => this.addNode(node));
   }
 
   /**
    * 그래프에 방향성 있는 간선을 추가합니다.
-   * @param from 시작 노드 ID
-   * @param to 도착 노드 ID
+   * @param newEdge 추가할 간선 객체
    */
-  addEdge(from: string, to: string): void {
-    // 출발 및 도착 노드가 존재하는지 확인하고, 없으면 추가합니다.
-    this.addNode(from);
-    this.addNode(to);
-
+  addEdge(newEdge: Edge): void {
     // 간선이 이미 존재하는지 확인합니다.
-    if (!this.edges.some(edge => edge.from === from && edge.to === to)) {
-      this.edges.push({ from, to });
-      this.adj.get(from)?.push(to);
+    if (!this.edges.some(edge => edge.id === newEdge.id)) { // Check by id
+      this.edges.push(newEdge);
     }
   }
 
   /**
+   * Lock an edge so that moving from `source` to `target` requires the given item.
+   */
+  lockEdge(source: string, target: string, item: string): void {
+    const edge = this.edges.find(e => e.source === source && e.target === target);
+    if (edge) edge.requiresItem = item;
+  }
+
+  /**
    * 특정 노드의 모든 인접 노드(자식 노드)를 반환합니다.
+   * (이 메서드는 adj 리스트가 Graph 클래스 내부에 유지될 경우에만 유효합니다.)
    * @param id 인접 노드를 찾을 노드의 ID
    * @returns 인접 노드 ID 배열
    */
   getNeighbors(id: string): string[] {
-    return this.adj.get(id) || [];
+    // If adj list is not kept internally, this method would need to iterate through edges
+    return this.edges.filter(edge => edge.source === id).map(edge => edge.target);
   }
 
   /**
@@ -64,6 +78,5 @@ export class Graph {
   clear(): void {
     this.nodes = [];
     this.edges = [];
-    this.adj.clear();
   }
 }

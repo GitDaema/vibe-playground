@@ -1,55 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { usePuzzle } from "../core/PuzzleContext";
 
-// Day3의 간단 매퍼를 그대로 사용한다고 가정 (parseKoreanCommand)
-import { parseKoreanCommand } from "../nlu/mapper.ko";
+export default function RuleEditor() {
+  const { cnl, setCnl } = usePuzzle();
 
-type Props = {
-  onCommand: (cmd: any) => void;
-};
-
-export default function RuleEditor({ onCommand }: Props) {
-  const [text, setText] = useState("");
-  const [json, setJson] = useState<any>(null);
-  const [err, setErr] = useState<string>("");
-
-  // text가 변경될 때마다 json과 err 상태를 초기화
-  useEffect(() => {
-    setJson(null);
-    setErr("");
-  }, [text]);
-
-  const handleParse = () => {
-    try {
-      const cmd = parseKoreanCommand(text.trim());
-      setJson(cmd);
-      setErr("");
-    } catch (e: any) {
-      setErr(e?.message || "파싱 실패");
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCnl(e.target.value);
   };
 
   return (
     <div className="space-y-2">
+      <h3 className="text-lg font-semibold border-b pb-2 mb-2">Rule Editor (CNL)</h3>
       <textarea
-        className="w-full h-24 border rounded-md p-2 text-sm"
-        placeholder={`예) 노드 A, B, C 만들어줘.
-A에서 B, C로 연결해줘.
-A를 시작, C를 목표로 해줘.`}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
+        className="w-full h-48 border rounded-md p-2 text-sm font-mono"
+        placeholder={`예시:\n# 규칙은 한 줄에 하나씩 작성합니다.\n# 주석은 #으로 시작합니다.\n\n\nA에 도착하면, B로 이동한다.\nB에 도착하면, 열쇠를 줍는다.\n열쇠를 가지고 있고 B에 도착하면, 문을 연다.\n이동 → A`}
+        value={cnl}
+        onChange={handleChange}
       />
-      <div className="flex gap-2">
-        <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={handleParse}>분석</button>
-        <button
-          className="px-3 py-2 rounded bg-blue-600 text-white"
-          onClick={() => json && onCommand(json)}
-          disabled={!json}
-        >
-          적용
-        </button>
-      </div>
-      {err && <p className="text-red-600 text-sm">{err}</p>}
-      <pre className="bg-slate-50 border rounded p-2 text-xs">{json ? JSON.stringify(json, null, 2) : "[분석 결과 대기]"}</pre>
+      {/* "분석" 버튼은 실시간 파싱으로 대체되므로 제거. "적용" 버튼도 제거. */}
     </div>
   );
 }

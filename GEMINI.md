@@ -22,14 +22,14 @@
 
 ---
 
-## ⚙️ 기술 구조 (Day3 기준)
+## ⚙️ 기술 구조 (Day4 기준)
 
 | 구분 | 주요 파일 | 역할 |
 |---|---|---|
-| **A. Core Layer** | `src/core/engine.ts`<br>`src/core/dsl.ts` | Tick 기반 결정론적 시뮬레이터 및 이벤트/액션 기반 Rule 실행기 |
-| **B. Graph Layer** | `src/graph/model.ts`<br>`src/graph/engine.ts`<br>`src/graph/actions.ts`<br>`src/graph/rules.ts` | Node, Edge, Graph 구조 정의, 탐색 루프(visit, discover), 액션(markColor, enqueue), BFS/DFS Rule 템플릿 |
-| **C. AI & NLU Layer** | `src/nlu/mapper.ko.ts`<br>`src/schemas/graph-rule.schema.json`<br>`src/codec/shareCode.ts` | 제한된 한국어(CNL) → Rule JSON 변환, Ajv 스키마 검증, LZ-String + Base64url 직렬화/복원 |
-| **D. UI Layer** | `src/ui/BuildMode.tsx`<br>`src/ui/PlayMode.tsx`<br>`src/ui/GraphCanvas.tsx`<br>`src/ui/RuleEditor.tsx` | 그래프 제작/도전 모드, 그래프 시각화, 자연어 규칙 입력 및 미리보기 |
+| **A. Core Layer** | `src/core/engine.ts`<br>`src/core/dsl.ts`<br>`src/core/PuzzleContext.tsx` | Tick 기반 결정론적 시뮬레이터 및 이벤트/액션 기반 Rule 실행기, 퍼즐 상태 통합 관리 |
+| **B. Graph Layer** | `src/graph/model.ts`<br>`src/graph/engine.ts`<br>`src/graph/mapper.cnl.ts`<br>`src/graph/rule-engine/RuleEngine.ts`<br>`src/graph/rule-engine/conditions.ts`<br>`src/graph/rule-engine/actions.ts`<br>`src/graph/rule-engine/types.ts`<br>`src/graph/validation/rule.schema.json` | Node, Edge, Graph 구조 정의, CNL 파서, 규칙 엔진, 조건/행동 정의, 규칙 스키마 |
+| **C. AI & NLU Layer** | `src/nlu/mapper.ko.ts`<br>`src/schemas/graph-rule.schema.json`<br>`src/codec/shareCode.ts` | (기존) 제한된 한국어(CNL) → Rule JSON 변환, Ajv 스키마 검증, LZ-String + Base64url 직렬화/복원 |
+| **D. UI Layer** | `src/ui/BuildMode.tsx`<br>`src/ui/PlayMode.tsx`<br>`src/ui/GraphCanvas.tsx`<br>`src/ui/RuleEditor.tsx`<br>`src/ui/PreviewPanel.tsx`<br>`src/ui/Playground.tsx` | 그래프 제작/도전 모드, 그래프 시각화, 자연어 규칙 입력 및 미리보기, 메인 퍼즐 실행 화면 |
 
 ---
 
@@ -82,6 +82,37 @@
 7. CRUD 및 Proof 시스템
 8. 결정론 테스트
 9. `README.md`, `GEMINI.md`, `DEVELOPMENT_LOG.md` 최종 갱신
+
+---
+
+## ✅ Day4 개발 완료
+
+Day4 목표였던 **규칙 기반 퍼즐 시스템 기초 완성**을 성공적으로 마쳤습니다.
+
+-   **CNL 파이프라인 고도화**:
+    -   `src/graph/rule-engine/types.ts`: 규칙, 조건, 행동 타입 정의
+    -   `src/graph/validation/rule.schema.json`: 규칙 JSON 스키마 정의
+    -   `src/graph/mapper.cnl.ts`: CNL 템플릿 파서 구현 (정규식 → 토큰 → JSON 변환 및 에러 처리)
+-   **규칙 기반 엔진(RuleEngine.ts) 구현**:
+    -   `src/graph/rule-engine/conditions.ts`: 조건 평가 로직 구현
+    -   `src/graph/rule-engine/actions.ts`: 행동 실행 로직 구현
+    -   `src/graph/rule-engine/RuleEngine.ts`: 규칙 실행 루프 및 상태 관리 엔진 구현
+-   **UI 통합**:
+    -   `src/core/PuzzleContext.tsx`: 퍼즐 상태 통합 관리 Context 구현
+    -   `src/ui/PreviewPanel.tsx`: CNL 파싱 결과 및 오류 미리보기 UI 추가
+    -   `src/ui/RuleEditor.tsx`: `PuzzleContext`와 연동하여 CNL 입력 및 실시간 파싱
+    -   `src/ui/Playground.tsx`: 메인 퍼즐 실행 화면으로 재구성, 시뮬레이션 제어 및 로그 표시
+    -   `src/ui/GraphCanvas.tsx`: 개체(Entity) 움직임 및 목표 노드 시각화 확장
+-   **의존성 설치**: `immer`, `ajv` 설치 완료.
+
+이제 사용자는 자연어로 규칙을 작성하고, 실시간으로 파싱 결과를 확인하며, 규칙 엔진을 통해 그래프 퍼즐을 단계별로 시뮬레이션할 수 있습니다.
+
+## 🧠 향후 계획 명시 (Day4~Day6 로드맵)
+| 일차 | 주요 목표 | 상세 설명 |
+|------|------------|-----------|
+| **Day4** | ✅ 규칙 기반 퍼즐 시스템 기초 완성 | CNL 파서 + RuleEngine + 미리보기 UI 구축 |
+| **Day5** | 퍼즐 공유/복원 시스템 구현 | 제작자 성공 시 최소 규칙 수 기록 및 해시 생성 |
+| **Day6** | ✅ **최종 완성 — ‘규칙 기반 그래프 퍼즐’ 완전 구현** | <br>1. 제작자: 그래프 제작 → 규칙 작성 → 직접 성공 → 공유 코드 생성<br>2. 도전자: 공유 코드 불러오기 → 규칙 작성 → 실행 → 성공 시 비교(규칙 수)<br>3. ‘규칙으로 사고하는 코딩 퍼즐 환경’ 완성 |
 
 **검증 기준:**
 - 자동평가 조건(파일, 커밋, 문서, 테스트) 충족.

@@ -42,11 +42,13 @@ This project allows users to build graph puzzles and design search algorithms us
 
 ## 📈 Project Status (프로젝트 현황)
 
-프로젝트 방향이 **그래프 퍼즐 샌드박스**로 재정립되었습니다. 현재 Day3 개발 단계에 있습니다.
+프로젝트 방향이 **규칙 기반 그래프 퍼즐 샌드박스**로 재정립되었으며, 현재 Day4 개발 단계에 있습니다.
 
 **Completed Milestones:**
 -   **Day 1:** Vite, React, TypeScript, Tailwind CSS 초기 프로젝트 환경 설정.
 -   **Day 2:** 결정론적 시뮬레이션을 위한 코어 엔진(`Engine`) 및 DSL(`Rule`) 실행기 초안 구현.
+-   **Day 3:** 그래프 시각화 및 탐색 시스템 완성.
+-   **Day 4:** 규칙 기반 퍼즐 시스템 기초 완성 (CNL 파서, RuleEngine, 미리보기 UI 구축).
 
 ## 🚀 Getting Started (시작하기)
 
