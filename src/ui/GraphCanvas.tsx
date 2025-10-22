@@ -22,21 +22,11 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
   return (
     <svg className="w-full h-[480px] bg-white rounded-xl shadow border" viewBox="0 0 520 440">
       {/* edges */}
-      {graph.edges.map((edge, i) => {
-        const a = pos[edge.from], b = pos[edge.to];
+      {graph.edges.map((edge) => {
+        const a = pos[edge.source], b = pos[edge.target];
         if (!a || !b) return null;
-        const locked = !!edge.requiresItem;
-        const midx = (a.x + b.x) / 2;
-        const midy = (a.y + b.y) / 2;
         return (
-          <g key={i}>
-            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={locked ? "#f59e0b" : "#cbd5e1"} strokeWidth={2} strokeDasharray={locked ? "6 4" : undefined} />
-            {locked && (
-              <text x={midx} y={midy - 6} textAnchor="middle" fontSize="12">🔒
-                {edge.requiresItem ? <tspan dx="4" fontSize="10" fill="#6b7280">{edge.requiresItem}</tspan> : null}
-              </text>
-            )}
-          </g>
+          <line key={edge.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#cbd5e1" strokeWidth={2} />
         );
       })}
       {/* nodes */}

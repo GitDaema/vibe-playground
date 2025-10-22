@@ -9,11 +9,25 @@ import { Graph } from "../graph/model";
 // This graph should match the Graph type defined in src/graph/model.ts
 const initialGraphData: Graph = (() => {
   const g = new Graph();
-  g.addNodes(["A", "B", "C", "D"]);
-  g.addEdge("A", "B");
-  g.addEdge("A", "C");
-  g.addEdge("B", "C");
-  g.addEdge("C", "D");
+
+  // Define nodes with positions
+  const nodes: Node[] = [
+    { id: "A", x: 100, y: 100 },
+    { id: "B", x: 300, y: 100 },
+    { id: "C", x: 200, y: 250 },
+    { id: "D", x: 400, y: 250 },
+  ];
+  g.addNodes(nodes);
+
+  // Define edges with IDs
+  const edges: Edge[] = [
+    { id: "AB", source: "A", target: "B" },
+    { id: "AC", source: "A", target: "C" },
+    { id: "BC", source: "B", target: "C" }, // Added ID for BC edge
+    { id: "CD", source: "C", target: "D" },
+  ];
+  edges.forEach(edge => g.addEdge(edge)); // Add edges as objects
+
   // Lock the path from B to C requiring the key
   g.lockEdge("B", "C", "열쇠");
   g.startNodeId = "A";
