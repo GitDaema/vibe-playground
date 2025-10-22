@@ -8,7 +8,6 @@ import type { StepResult } from '../graph/rule-engine/RuleEngine';
 import Ajv from 'ajv';
 import ruleSchema from '../graph/validation/rule.schema.json';
 
-// Setup AJV validator
 const ajv = new Ajv();
 const validate = ajv.compile(ruleSchema);
 
@@ -22,6 +21,8 @@ interface PuzzleContextType {
   validationErrors: string[];
   puzzleState: PuzzleState | null;
   simulationHistory: StepResult[];
+  feedbackMessage: string;
+  setFeedbackMessage: (message: string) => void;
   runSimulation: () => void;
   stepSimulation: () => void;
   resetSimulation: () => void;
@@ -51,23 +52,12 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
   
   const [puzzleState, setPuzzleState] = useState<PuzzleState | null>(null);
   const [simulationHistory, setSimulationHistory] = useState<StepResult[]>([]);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
-  const createInitialState = useCallback((startNodeId: string): PuzzleState => {
-    const nodesMap: PuzzleState['nodes'] = Object.fromEntries(
-      graph.nodes.map(n => [n.id, { tags: [] }])
-    );
-    // Seed items on nodes based on edge requirements (place item at the 'source' node)
-    for (const e of graph.edges) {
-      if (e.requiresItem && nodesMap[e.source]) {
-        const tag = `item:${e.requiresItem}`;
-        if (!nodesMap[e.source].tags.includes(tag)) nodesMap[e.source].tags.push(tag);
-      }
-    }
-    return {
-      entity: { at: startNodeId, inventory: [] },
-      nodes: nodesMap,
-    };
-  }, [graph]);
+  const createInitialState = useCallback((startNodeId: string): PuzzleState => ({
+    entity: { at: startNodeId, inventory: [] },
+    nodes: Object.fromEntries(graph.nodes.map(n => [n.id, { tags: n.tags || [] }])),
+  }), [graph]);
 
   const setCnl = useCallback((text: string) => {
     setCnlText(text);
@@ -75,7 +65,6 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     setParsedRules(rules);
     setParsingErrors(errors);
 
-    // AJV Validation
     const isValid = validate(rules);
     if (!isValid) {
       setValidationErrors(validate.errors?.map(e => e.message || 'Unknown validation error') || []);
@@ -90,6 +79,7 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
       const initialState = createInitialState(startNode.id);
       setPuzzleState(initialState);
       setSimulationHistory([]);
+      setFeedbackMessage('');
     } else {
       setPuzzleState(null);
       setSimulationHistory([]);
@@ -100,38 +90,29 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     if (!puzzleState || !graph.goalNodeId) return;
     if (validationErrors.length > 0 || parsingErrors.length > 0) return;
 
-    // We need a fresh engine for each step if we want the simulation to be driven by the UI state
-    const engine = new RuleEngine(parsedRules, puzzleState, graph.goalNodeId!, graph);
+    const engine = new RuleEngine(parsedRules, puzzleState, graph);
     const result = engine.step();
 
     if (result) {
       setPuzzleState(result.newState);
       setSimulationHistory(prev => [...prev, result]);
-    } else {
-      // No rule applied — give a helpful hint in console
-      const at = puzzleState.entity.at;
-      const inv = puzzleState.entity.inventory;
-      const outgoing = graph.edges.filter(e => e.source === at);
-      const blocked = outgoing.filter(e => e.requiresItem && !inv.includes(e.requiresItem));
-      if (blocked.length > 0) {
-        const msgs = blocked.map(e => `${e.source}→${e.target} requires '${e.requiresItem}'`).join(', ');
-        console.log(`No applicable rule. Locked path(s): ${msgs}`);
-      } else {
-        console.log("Simulation stopped: No applicable rule found.");
+      if (result.isFinished) {
+        setFeedbackMessage('Goal Reached!');
       }
+    } else {
+      const feedback = engine.getNoRuleApplicableFeedback();
+      setFeedbackMessage(feedback || "규칙 적용 실패: 더 이상 적용할 규칙이 없습니다.");
+      console.log(feedback);
     }
-  }, [puzzleState, graph.goalNodeId, parsedRules, validationErrors, parsingErrors]);
+  }, [puzzleState, graph, parsedRules, validationErrors, parsingErrors]);
 
   const runSimulation = useCallback(() => {
-    // A full run would use a loop with requestAnimationFrame for visualization
-    // For now, just take one step.
     stepSimulation();
   }, [stepSimulation]);
 
-  // Reset state when graph or rules change
   useEffect(() => {
     resetSimulation();
-  }, [graph, parsedRules, resetSimulation]);
+  }, [graph, resetSimulation]);
 
   const value = {
     graph,
@@ -143,6 +124,8 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     validationErrors,
     puzzleState,
     simulationHistory,
+    feedbackMessage,
+    setFeedbackMessage,
     runSimulation,
     stepSimulation,
     resetSimulation,

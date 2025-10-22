@@ -1,45 +1,24 @@
-import { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import GraphCanvas from "./GraphCanvas2";
 import RuleEditor from "./RuleEditor";
-import { PreviewPanel } from "./PreviewPanel"; // New import
-import { PuzzleProvider, usePuzzle } from "../core/PuzzleContext"; // New import
+import { PreviewPanel } from "./PreviewPanel";
+import { PuzzleProvider, usePuzzle } from "../core/PuzzleContext";
 import { Graph } from "../graph/model";
-import type { Node, Edge } from "../graph/model";
+import { parseAuthoringCnl, AuthorCnlError } from "../graph/author.cnl";
 
-// Define a dummy initial graph for now. This would eventually come from a challenge code or build mode.
-// This graph should match the Graph type defined in src/graph/model.ts
-const initialGraphData: Graph = (() => {
-  const g = new Graph();
+const initialAuthorCnl = `노드 A, B, C, D를 만든다.
+A에서 B로 간선을 잇는다.
+A에서 C로 간선을 잇는다.
+B에서 C로 간선을 잇는다.
+C에서 D로 간선을 잇는다.
+B→C는 '열쇠'가 필요하다.
+B에 '열쇠'가 있다.
+시작은 A, 목표는 D.`;
 
-  // Define nodes with positions
-  const nodes: Node[] = [
-    { id: "A", x: 100, y: 100 },
-    { id: "B", x: 300, y: 100 },
-    { id: "C", x: 200, y: 250 },
-    { id: "D", x: 400, y: 250 },
-  ];
-  g.addNodes(nodes);
-
-  // Define edges with IDs
-  const edges: Edge[] = [
-    { id: "AB", source: "A", target: "B" },
-    { id: "AC", source: "A", target: "C" },
-    { id: "BC", source: "B", target: "C" }, // Added ID for BC edge
-    { id: "CD", source: "C", target: "D" },
-  ];
-  edges.forEach(edge => g.addEdge(edge)); // Add edges as objects
-
-  // Lock the path from B to C requiring the key
-  g.lockEdge("B", "C", "열쇠");
-  g.startNodeId = "A";
-  g.goalNodeId = "D";
-  return g;
-})();
-
-// This is the main component that will be wrapped by PuzzleProvider
 const PlaygroundContent: React.FC = () => {
   const {
     graph,
+    setGraph,
     puzzleState,
     stepSimulation,
     resetSimulation,
@@ -47,54 +26,41 @@ const PlaygroundContent: React.FC = () => {
     parsingErrors,
     validationErrors,
     simulationHistory,
+    feedbackMessage,
+    setFeedbackMessage,
   } = usePuzzle();
 
-  const hasErrors = parsingErrors.length > 0 || validationErrors.length > 0;
+  const [activeTab, setActiveTab] = useState<'create' | 'solve'>('create');
+  const [authorCnl, setAuthorCnl] = useState(initialAuthorCnl);
+  const [authorErrors, setAuthorErrors] = useState<AuthorCnlError[]>([]);
 
-  // Effect to reset simulation when graph or rules change
+  const handleCreateGraph = useCallback(() => {
+    const { graph: newGraph, errors } = parseAuthoringCnl(authorCnl);
+    setAuthorErrors(errors);
+    if (errors.length === 0) {
+      setGraph(newGraph);
+      setActiveTab('solve'); // Switch to solve tab on success
+    }
+  }, [authorCnl, setGraph]);
+
   useEffect(() => {
-    resetSimulation();
-  }, [graph, resetSimulation]); // Depend on graph to reset when it changes
+    if (feedbackMessage) {
+      const timer = setTimeout(() => setFeedbackMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedbackMessage, setFeedbackMessage]);
+
+  const hasSolveErrors = parsingErrors.length > 0 || validationErrors.length > 0;
 
   return (
     <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4 h-screen">
-      {/* Graph Visualization */}
       <div className="col-span-2 flex flex-col">
-        <h2 className="font-bold text-lg mb-2">Graph Puzzle</h2>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
-              onClick={stepSimulation}
-              disabled={hasErrors || !puzzleState || puzzleState.entity.at === graph.goalNodeId}
-            >
-              Step
-            </button>
-            <button
-              className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-              onClick={runSimulation}
-              disabled={hasErrors || !puzzleState || puzzleState.entity.at === graph.goalNodeId}
-            >
-              Run
-            </button>
-            <button
-              className="px-3 py-2 rounded bg-slate-200 disabled:opacity-50"
-              onClick={resetSimulation}
-              disabled={!puzzleState}
-            >
-              Reset
-            </button>
-          </div>
-          <div className="text-sm text-slate-700">
-            <span className="font-semibold mr-2">Inventory:</span>
-            {puzzleState && puzzleState.entity.inventory.length > 0 ? (
-              <span>{puzzleState.entity.inventory.join(', ')}</span>
-            ) : (
-              <span>(empty)</span>
-            )}
-          </div>
+        <div className="flex border-b mb-4">
+          <TabButton name="create" current={activeTab} set={setActiveTab}>1. 퍼즐 만들기</TabButton>
+          <TabButton name="solve" current={activeTab} set={setActiveTab}>2. 퍼즐 풀기</TabButton>
         </div>
-        <div className="flex-grow border rounded-md p-2">
+
+        <div className="flex-grow border rounded-md p-2 relative">
           <GraphCanvas
             graph={graph}
             entityPosition={puzzleState?.entity.at}
@@ -102,44 +68,90 @@ const PlaygroundContent: React.FC = () => {
             inventory={puzzleState?.entity.inventory}
             nodeTags={puzzleState?.nodes}
           />
+          {feedbackMessage && (
+            <div className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-sm p-2 rounded shadow-lg">
+              {feedbackMessage}
+            </div>
+          )}
         </div>
         <div className="mt-2 text-xs text-slate-600">
           <span className="mr-4">Legend: 🔑 item on node</span>
           <span>🔒 locked edge (requires item)</span>
         </div>
-        {/* Simulation History/Log */}
-        <div className="mt-4 p-2 border rounded-md bg-gray-50 h-32 overflow-y-auto text-sm">
-          <h3 className="font-semibold">Simulation Log:</h3>
-          {simulationHistory.length === 0 ? (
-            <p className="text-gray-500">No steps yet.</p>
-          ) : (
-            <ul>
-              {simulationHistory.map((entry, index) => (
-                <li key={index} className="mb-1">
-                  {entry.log}
-                  {entry.isFinished && <span className="font-bold text-green-700 ml-2"> (Goal Reached!)</span>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
 
-      {/* Rule Editor and Preview */}
       <div className="col-span-1 flex flex-col space-y-4">
-        <RuleEditor />
-        <div className="flex-grow">
-          <PreviewPanel />
-        </div>
+        {activeTab === 'create' ? (
+          <AuthoringPanel 
+            cnl={authorCnl} 
+            setCnl={setAuthorCnl} 
+            errors={authorErrors} 
+            onCreate={handleCreateGraph} 
+          />
+        ) : (
+          <SolvingPanel 
+            hasErrors={hasSolveErrors} 
+            step={stepSimulation} 
+            run={runSimulation} 
+            reset={resetSimulation} 
+            history={simulationHistory} 
+            puzzleState={puzzleState} 
+            goalNodeId={graph.goalNodeId}
+          />
+        )}
       </div>
     </div>
   );
 };
 
-// The actual default export, wrapping PlaygroundContent with PuzzleProvider
+const TabButton: React.FC<{name: 'create' | 'solve', current: string, set: (tab: 'create' | 'solve') => void, children: React.ReactNode}> = ({name, current, set, children}) => (
+  <button 
+    onClick={() => set(name)} 
+    className={`px-4 py-2 -mb-px border-b-2 ${current === name ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+    {children}
+  </button>
+);
+
+const AuthoringPanel: React.FC<{cnl: string, setCnl: (c: string) => void, errors: AuthorCnlError[], onCreate: () => void}> = ({cnl, setCnl, errors, onCreate}) => (
+  <>
+    <h3 className="text-lg font-semibold">퍼즐 저작 (CNL)</h3>
+    <textarea
+      className="w-full h-64 border rounded-md p-2 text-sm font-mono"
+      value={cnl}
+      onChange={(e) => setCnl(e.target.value)}
+    />
+    <button className="px-4 py-2 rounded bg-blue-600 text-white w-full" onClick={onCreate}>그래프 생성</button>
+    {errors.length > 0 && (
+      <div className="text-red-500 p-2 bg-red-50 rounded-md overflow-y-auto">
+        <h4 className="font-bold">Errors:</h4>
+        <ul>{errors.map((e, i) => <li key={i}>{e.message}</li>)}</ul>
+      </div>
+    )}
+  </>
+);
+
+const SolvingPanel: React.FC<any> = ({hasErrors, step, run, reset, history, puzzleState, goalNodeId}) => (
+  <>
+    <div className="flex gap-2">
+      <button className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-50" onClick={step} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Step</button>
+      <button className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50" onClick={run} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Run</button>
+      <button className="px-3 py-2 rounded bg-slate-200 disabled:opacity-50" onClick={reset} disabled={!puzzleState}>Reset</button>
+    </div>
+    <RuleEditor />
+    <div className="flex-grow"><PreviewPanel /></div>
+    <div className="p-2 border rounded-md bg-gray-50 h-32 overflow-y-auto text-sm">
+      <h3 className="font-semibold">Simulation Log:</h3>
+      {history.length === 0 ? <p className="text-gray-500">No steps yet.</p> : 
+        <ul>{history.map((entry: any, i: number) => <li key={i} className="mb-1">{entry.log}{entry.isFinished && <span className="font-bold text-green-700 ml-2">(Goal Reached!)</span>}</li>)}</ul>
+      }
+    </div>
+  </>
+);
+
 export default function Playground() {
+  // Initial graph is now empty, created by the user.
   return (
-    <PuzzleProvider initialGraph={initialGraphData}>
+    <PuzzleProvider initialGraph={new Graph()}>
       <PlaygroundContent />
     </PuzzleProvider>
   );

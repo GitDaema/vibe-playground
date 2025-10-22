@@ -1,7 +1,7 @@
 import type { PuzzleState, RuleSet, Rule } from './types';
-import type { Graph } from '../model';
 import { checkCondition } from './conditions';
-import { executeAction } from './actions';
+import { executeAction, canExecuteAction } from './actions';
+import type { Graph } from '../model';
 
 export interface StepResult {
   newState: PuzzleState;
@@ -13,13 +13,11 @@ export interface StepResult {
 export class RuleEngine {
   private state: PuzzleState;
   private readonly rules: RuleSet;
-  private readonly goalNodeId: string;
   private readonly graph: Graph;
 
-  constructor(rules: RuleSet, initialState: PuzzleState, goalNodeId: string, graph: Graph) {
+  constructor(rules: RuleSet, initialState: PuzzleState, graph: Graph) {
     this.rules = rules;
     this.state = initialState;
-    this.goalNodeId = goalNodeId;
     this.graph = graph;
   }
 
@@ -27,44 +25,82 @@ export class RuleEngine {
     return this.state;
   }
 
-  /**
-   * Executes a single step of the puzzle logic.
-   * It finds the first matching rule and applies its actions.
-   * @returns A StepResult if a rule was applied, otherwise null.
-   */
   public step(): StepResult | null {
+    const applicableRule = this.findApplicableRule();
+
+    if (!applicableRule) {
+      return null;
+    }
+
+    let nextState = this.state;
+    for (const action of applicableRule.then) {
+      nextState = executeAction(nextState, action, this.graph);
+    }
+
+    this.state = nextState;
+
+    const isFinished = this.checkIsFinished();
+    
+    return {
+      newState: this.state,
+      appliedRule: applicableRule,
+      isFinished,
+      log: `[L${applicableRule.sourceLine}] ${this.getRuleLog(applicableRule)}`,
+    };
+  }
+
+  private findApplicableRule(): Rule | undefined {
     for (const rule of this.rules) {
       const allConditionsMet = rule.when.every(condition =>
         checkCondition(this.state, condition)
       );
-      if (!allConditionsMet) continue;
-
-      // Simulate applying the rule; if it produces no state change, skip it
-      let candidate = this.state;
-      for (const action of rule.then) {
-        candidate = executeAction(candidate, action, { graph: this.graph });
+      if (allConditionsMet) {
+        const allActionsCanExecute = rule.then.every(action => 
+          canExecuteAction(this.state, action, this.graph)
+        );
+        if (allActionsCanExecute) {
+          return rule;
+        }
       }
-      if (candidate === this.state) {
-        // no-op; try next rule
-        continue;
-      }
-
-      this.state = candidate;
-      const isFinished = this.checkIsFinished();
-      return {
-        newState: this.state,
-        appliedRule: rule,
-        isFinished,
-        log: `[Line ${rule.sourceLine}] Rule applied. Entity at: ${this.state.entity.at}${isFinished ? ' (Goal Reached!)' : ''}`,
-      };
     }
-
-    return null; // No applicable rule that changes state
+    return undefined;
   }
 
-  // Note: selection logic is handled directly in step() to allow skipping no-op rules
+  public getNoRuleApplicableFeedback(): string {
+    for (const rule of this.rules) {
+      const allConditionsMet = rule.when.every(condition =>
+        checkCondition(this.state, condition)
+      );
+      if (allConditionsMet) {
+        for (const action of rule.then) {
+          if (!canExecuteAction(this.state, action, this.graph)) {
+            const actionKey = Object.keys(action)[0];
+            if (actionKey === 'moveTo') {
+              const targetNode = action[actionKey];
+              const edge = this.graph.edges.find(e => e.source === this.state.entity.at && e.target === targetNode);
+              if (edge?.requiresItem) {
+                return `이동 불가: ${edge.source}→${edge.target} 경로는 '${edge.requiresItem}' 아이템이 필요합니다.`;
+              }
+            }
+            return `규칙 ${rule.sourceLine}의 행동(${actionKey})을 실행할 수 없습니다.`;
+          }
+        }
+      }
+    }
+    return "더 이상 적용할 수 있는 규칙이 없습니다.";
+  }
 
   private checkIsFinished(): boolean {
-    return this.state.entity.at === this.goalNodeId;
+    return this.state.entity.at === this.graph.goalNodeId;
+  }
+
+  private getRuleLog(rule: Rule): string {
+    const conditionStr = rule.when.map(c => Object.keys(c)[0]).join(', ');
+    const actionStr = rule.then.map(a => {
+      const key = Object.keys(a)[0];
+      const value = a[key];
+      return `${key}(${value})`;
+    }).join(', ');
+    return `(${conditionStr}) → ${actionStr}. Entity at: ${this.state.entity.at}`;
   }
 }

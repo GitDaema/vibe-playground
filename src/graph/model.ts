@@ -1,7 +1,8 @@
 export interface Node {
   id: string;
-  x: number; // Added for UI positioning
-  y: number; // Added for UI positioning
+  x: number; // UI positioning
+  y: number; // UI positioning
+  tags?: string[]; // Optional tags (e.g., item:열쇠)
 }
 
 export interface Edge {
