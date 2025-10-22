@@ -101,7 +101,7 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
       }
     } else {
       const feedback = engine.getNoRuleApplicableFeedback();
-      setFeedbackMessage(feedback || "규칙 적용 실패: 더 이상 적용할 규칙이 없습니다.");
+      setFeedbackMessage(feedback || "규칙 ?�용 ?�패: ???�상 ?�용??규칙???�습?�다.");
       console.log(feedback);
     }
   }, [puzzleState, graph, parsedRules, validationErrors, parsingErrors]);

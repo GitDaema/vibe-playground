@@ -1,4 +1,4 @@
-import type { PuzzleState, RuleSet, Rule } from './types';
+﻿import type { PuzzleState, RuleSet, Rule } from './types';
 import { checkCondition } from './conditions';
 import { executeAction, canExecuteAction } from './actions';
 import type { Graph } from '../model';
@@ -27,20 +27,15 @@ export class RuleEngine {
 
   public step(): StepResult | null {
     const applicableRule = this.findApplicableRule();
-
-    if (!applicableRule) {
-      return null;
-    }
+    if (!applicableRule) return null;
 
     let nextState = this.state;
     for (const action of applicableRule.then) {
       nextState = executeAction(nextState, action, this.graph);
     }
-
     this.state = nextState;
 
     const isFinished = this.checkIsFinished();
-    
     return {
       newState: this.state,
       appliedRule: applicableRule,
@@ -51,43 +46,37 @@ export class RuleEngine {
 
   private findApplicableRule(): Rule | undefined {
     for (const rule of this.rules) {
-      const allConditionsMet = rule.when.every(condition =>
-        checkCondition(this.state, condition)
-      );
-      if (allConditionsMet) {
-        const allActionsCanExecute = rule.then.every(action => 
-          canExecuteAction(this.state, action, this.graph)
-        );
-        if (allActionsCanExecute) {
-          return rule;
-        }
-      }
+      const allConditionsMet = rule.when.every(condition => checkCondition(this.state, condition));
+      if (!allConditionsMet) continue;
+      const allActionsCanExecute = rule.then.every(action => canExecuteAction(this.state, action, this.graph));
+      if (allActionsCanExecute) return rule;
     }
     return undefined;
   }
 
   public getNoRuleApplicableFeedback(): string {
     for (const rule of this.rules) {
-      const allConditionsMet = rule.when.every(condition =>
-        checkCondition(this.state, condition)
-      );
+      const allConditionsMet = rule.when.every(condition => checkCondition(this.state, condition));
       if (allConditionsMet) {
         for (const action of rule.then) {
           if (!canExecuteAction(this.state, action, this.graph)) {
             const actionKey = Object.keys(action)[0];
             if (actionKey === 'moveTo') {
-              const targetNode = action[actionKey];
+              const targetNode = (action as any)[actionKey];
               const edge = this.graph.edges.find(e => e.source === this.state.entity.at && e.target === targetNode);
               if (edge?.requiresItem) {
                 return `이동 불가: ${edge.source}→${edge.target} 경로는 '${edge.requiresItem}' 아이템이 필요합니다.`;
               }
+              if (!edge) {
+                return `이동 불가: ${this.state.entity.at}에서 ${targetNode}로 가는 간선이 없습니다.`;
+              }
             }
-            return `규칙 ${rule.sourceLine}의 행동(${actionKey})을 실행할 수 없습니다.`;
+            return `규칙 ${rule.sourceLine}의 동작(${actionKey})을 실행할 수 없습니다.`;
           }
         }
       }
     }
-    return "더 이상 적용할 수 있는 규칙이 없습니다.";
+    return '적용 가능한 규칙이 없습니다.';
   }
 
   private checkIsFinished(): boolean {
@@ -98,7 +87,7 @@ export class RuleEngine {
     const conditionStr = rule.when.map(c => Object.keys(c)[0]).join(', ');
     const actionStr = rule.then.map(a => {
       const key = Object.keys(a)[0];
-      const value = a[key];
+      const value = (a as any)[key];
       return `${key}(${value})`;
     }).join(', ');
     return `(${conditionStr}) → ${actionStr}. Entity at: ${this.state.entity.at}`;
