@@ -6,7 +6,7 @@ type ActionExecutor = (state: PuzzleState, params: any, ctx: { graph: Graph }) =
 
 const EXECUTORS: Record<string, ActionExecutor> = {
   moveTo: (state, nodeId, ctx) => {
-    const edge = ctx.graph.edges.find(e => e.from === state.entity.at && e.to === nodeId);
+    const edge = ctx.graph.edges.find(e => e.source === state.entity.at && e.target === nodeId);
     if (!edge) {
       return state;
     }

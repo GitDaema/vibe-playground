@@ -56,11 +56,11 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     const nodesMap: PuzzleState['nodes'] = Object.fromEntries(
       graph.nodes.map(n => [n.id, { tags: [] }])
     );
-    // Seed items on nodes based on edge requirements (place item at the 'from' node)
+    // Seed items on nodes based on edge requirements (place item at the 'source' node)
     for (const e of graph.edges) {
-      if (e.requiresItem && nodesMap[e.from]) {
+      if (e.requiresItem && nodesMap[e.source]) {
         const tag = `item:${e.requiresItem}`;
-        if (!nodesMap[e.from].tags.includes(tag)) nodesMap[e.from].tags.push(tag);
+        if (!nodesMap[e.source].tags.includes(tag)) nodesMap[e.source].tags.push(tag);
       }
     }
     return {
@@ -108,8 +108,17 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
       setPuzzleState(result.newState);
       setSimulationHistory(prev => [...prev, result]);
     } else {
-      // No rule applied
-      console.log("Simulation stopped: No applicable rule found.");
+      // No rule applied — give a helpful hint in console
+      const at = puzzleState.entity.at;
+      const inv = puzzleState.entity.inventory;
+      const outgoing = graph.edges.filter(e => e.source === at);
+      const blocked = outgoing.filter(e => e.requiresItem && !inv.includes(e.requiresItem));
+      if (blocked.length > 0) {
+        const msgs = blocked.map(e => `${e.source}→${e.target} requires '${e.requiresItem}'`).join(', ');
+        console.log(`No applicable rule. Locked path(s): ${msgs}`);
+      } else {
+        console.log("Simulation stopped: No applicable rule found.");
+      }
     }
   }, [puzzleState, graph.goalNodeId, parsedRules, validationErrors, parsingErrors]);
 

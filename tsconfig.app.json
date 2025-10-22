@@ -36,6 +36,7 @@
   },
   "include": ["src"],
   "exclude": [
-    // "src/nlu/**/*" // Removed
+    "src/nlu/**/*",
+    "src/ui/GraphCanvas.tsx"
   ]
 }

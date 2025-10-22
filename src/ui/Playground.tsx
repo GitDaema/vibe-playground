@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import GraphCanvas from "./GraphCanvas";
+import GraphCanvas from "./GraphCanvas2";
 import RuleEditor from "./RuleEditor";
 import { PreviewPanel } from "./PreviewPanel"; // New import
 import { PuzzleProvider, usePuzzle } from "../core/PuzzleContext"; // New import
 import { Graph } from "../graph/model";
+import type { Node, Edge } from "../graph/model";
 
 // Define a dummy initial graph for now. This would eventually come from a challenge code or build mode.
 // This graph should match the Graph type defined in src/graph/model.ts
