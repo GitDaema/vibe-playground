@@ -166,6 +166,8 @@
 - 엔진과 DSL을 스텁 형태로 구분하면 잦은 정책 변경에도 엔진의 안정성을 확보하며 독립적인 개발이 가능.
 - files:// MCP를 이용해 @로 파일에 접근하면 명시적 컨텍스트로 인식해 정확도 상승.
 
+---
+
 ### Day 3 - 프로젝트 방향 재정립 및 시각화
 
 #### GEMINI CLI 사용 프롬프트(1차 시도 실패로 인한 2차 프롬프트)
@@ -352,3 +354,144 @@ Gemini CLI는 아래 두 문서를 자동 재작성해야 한다:
 - Gemini CLI와 Codex를 함께 사용해 상황 별로 적절한 도구를 호출하는 에이전트 기법 사용.
 - LLM을 대체하기 위해 제한된 CNL -> 정규식/토큰 매핑 -> json -> ajv 파이프라인 분석.
 - 웹 어플리케이션 개발 과정에서 브라우저 콘솔을 이용한 디버깅의 중요성을 확인. 
+
+---
+
+### Day 4 - 규칙 기반 퍼즐 시스템 기초 완성
+
+#### GEMINI CLI 사용 프롬프트
+
+gemini run --role "Day4 개발 페어 프로그래밍 어시스턴트" --goal "
+🎯 목표:
+Vibe Playground 프로젝트의 Day4 개발을 진행한다.
+Day6까지 '규칙(Rule)을 따르는 개체(Entity)가 그래프(Graph) 환경에서 목적(Goal)을 달성하면 성공하는 완전한 퍼즐 형식'을 완성하는 것을 최종 목표로 한다.
+
+---
+
+## 📘 현재 상황
+- CNL(Controlled Natural Language)을 기반으로 한 파이프라인이 이미 존재함:
+  (제한된 자연어 입력) → 정규식/토큰 매핑 → JSON 변환 → AJV 검증
+- Day3까지 그래프 시각화 및 탐색 시스템이 완성됨.
+- 이제 그래프를 단순 탐색 대상이 아닌 '규칙으로 제어되는 퍼즐 환경'으로 발전시켜야 함.
+
+---
+
+## 🚀 Day4 주요 개발 목표
+1️⃣ **CNL 파이프라인 고도화**
+   - 기존 정규식 매핑 단계를 유지하되, 입력 구조를 **CNL-Template** 형태로 강화
+   - CNL → Token → JSON → AJV의 4단계 파이프라인 유지
+   - 에러 메시지를 명확하게 개선 (예: ‘이동(→A)’ 앞에 조건이 없습니다 등)
+   - 향후 확장 대비를 위해 `mapper.cnl.ts` 내부 로직을 모듈화
+
+2️⃣ **규칙 기반 엔진(RuleEngine.ts) 구현**
+   - JSON으로 파싱된 규칙들을 순차적으로 평가 및 실행
+   - 조건(when) → 행동(then) 구조의 반복 실행 루프 구현
+   - 조건 매칭 실패 시 디버그 로그를 남기고, 성공 시 상태(State) 업데이트
+   - Goal 노드 도달 시 종료 및 성공 반환
+
+3️⃣ **RuleEditor.tsx + PreviewPanel.tsx UI 추가**
+   - 사용자가 규칙을 입력하면 즉시 JSON 변환 결과 미리보기
+   - 구문 오류나 검증 실패 시 시각적 경고 표시
+   - 규칙 실행 시 `GraphCanvas`에 개체(Entity) 움직임을 표시
+
+4️⃣ **기존 그래프 시각화와 통합**
+   - `GraphCanvas.tsx`를 확장하여 규칙 실행 결과(이동, 열기, 토글 등)를 실시간으로 표현
+   - 성공 시 목표 노드 하이라이트, 실패 시 경고 색상 표시
+
+5️⃣ **README.md / GEMINI.md 문서 갱신**
+   - 기존 문서 형식을 유지하되, 다음 항목을 추가 또는 수정:
+     - Day4 개발 완료 섹션 추가
+     - ‘규칙 기반 퍼즐 시스템 구축’ 설명 보강
+     - 실행 명령어 `npm run dev` 기준으로 수정
+     - GEMINI.md에는 Day4 작업 내용 및 Day6까지의 최종 퍼즐 목표 명시
+
+---
+
+## 🧱 신규 및 수정 파일 구조
+src/
+ ├── graph/
+ │    ├── GraphEngine.ts
+ │    ├── mapper.cnl.ts               # CNL 템플릿 파서 (정규식→토큰→JSON)
+ │    ├── rule-engine/
+ │    │    ├── RuleEngine.ts          # 규칙 실행 루프
+ │    │    ├── conditions.ts          # 조건 정의
+ │    │    ├── actions.ts             # 행동 정의
+ │    │    └── types.ts               # RuleSchema 타입
+ │    └── validation/
+ │         └── rule.schema.json       # AJV 스키마 (규칙 검증)
+ ├── ui/
+ │    ├── RuleEditor.tsx              # 규칙 입력 UI
+ │    ├── PreviewPanel.tsx            # 변환 결과 및 오류 표시
+ │    └── GraphCanvas.tsx             # 그래프 + 개체 애니메이션
+ ├── core/
+ │    └── PuzzleContext.ts            # 그래프 + 규칙 + 목표 상태 통합 관리
+ └── pages/
+      └── Playground.tsx              # 메인 퍼즐 실행 화면 (Day4 핵심)
+
+---
+
+## �� 커밋 메시지 제안
+feat: implement CNL parser and rule engine for rule-based puzzles [ai-assist]  
+chore: update README and GEMINI docs for Day4 progress [ai-assist]
+
+---
+
+## 🧠 향후 계획 명시 (Day4~Day6 로드맵)
+| 일차 | 주요 목표 | 상세 설명 |
+|------|------------|-----------|
+| **Day4** | 규칙 기반 퍼즐 시스템 기초 완성 | CNL 파서 + RuleEngine + 미리보기 UI 구축 |
+| **Day5** | 퍼즐 공유/복원 시스템 구현 | 제작자 성공 시 최소 규칙 수 기록 및 해시 생성 |
+| **Day6** | ✅ **최종 완성 — ‘규칙 기반 그래프 퍼즐’ 완전 구현** | <br>1. 제작자: 그래프 제작 → 규칙 작성 → 직접 성공 → 공유 코드 생성<br>2. 도전자: 공유 코드 불러오기 → 규칙 작성 → 실행 → 성공 시 비교(규칙 수)<br>3. ‘규칙으로 사고하는 코딩 퍼즐 환경’ 완성 |
+
+---
+
+## 🧰 실행 명령어
+npm run dev
+
+---
+
+## ✅ 출력 형식
+- 신규 및 수정된 파일의 경로와 코드 전문  
+- README.md / GEMINI.md 수정 내용 (기존 구조 유지, Day4 내용만 추가)  
+- 실행 명령어 (`npm run dev`)  
+- 커밋 메시지 (Conventional Commit 형식)
+
+[Day 4 Gemini 전체 대화 로그 보기](./gemini_cli_logs/Day4-Log.md)
+[Day 4 Codex 전체 대화 로그 보기](./codex_logs/Day4-Log-Codex.md)
+
+#### 프롬프트 적용 결과
+- **기초 시스템 확립**  
+    -   CNL 파서(`src/graph/mapper.cnl.ts`), 규칙 스키마(`src/graph/validation/rule.schema.json`), 타입 정의(`src/graph/rule-engine/types.ts`) 추가.
+    -   RuleEngine 본체/조건/행동(`RuleEngine.ts`, `conditions.ts`, `actions.ts`) 구현, immer 도입.
+- **UI 통합**
+    -   `src/core/PuzzleContext.tsx` 신설(상태/로직 허브), `PreviewPanel.tsx` 실시간 파싱/검증 미리보기
+    -   `RuleEditor.tsx` 리팩터링, `Playground.tsx` 오케스트레이션 및 Step/Run/Reset/로그, `GraphCanvas.tsx` 이동 및 Goal 하이라이트.
+- **실행 루프 환경 확보**
+    -   그래프 생성 -> 규칙 입력 -> 시뮬레이션 실행 -> 결과 확인의 전체 루프 완성
+
+![실행 화면 스크린샷](./screenshots/day4-1-making-puzzle.png)
+![실행 화면 스크린샷](./screenshots/day4-2-solving-puzzle.png)
+
+#### 문제 및 해결 과정
+1. **인공지능 모델 간 소통 부재**  
+    -   Gemini CLI가 Codex가 수정한 주요 파일 누락 및 충돌 발생
+    -   파일 재수정, 이어가기 프롬프트를 활용해 복구
+
+2. **ESM 런타임 오류**
+    -   타입을 값으로 임포트하는 `verbatimModuleSyntax` -> TS/런타임 에러 발생
+    -   `import type`으로 타입 전용 임포트 분리, 불필요한 기본 React 임포트 제거
+
+3. **이동 허용 처리 중 그래프 검증 과정 누락**
+    -   RuleEngine이 그래프 간선 및 현재 개체 상태를 검증하지 않고 이동을 허용
+    -   엔진이 실제 그래프 구조를 기반으로만 이동하도록 수정
+
+4. **UI 배치 충돌**
+    -   Step/Run/Reset 버튼이 로그/캔버스 위에 겹치는 문제가 발생
+    -   상단 툴바로 버튼 이동, HUD 패널 신설하여 시뮬레이션 가독성 향상
+
+#### 학습 내용
+- 에이전트 기법의 위험성 및 모델 간 프롬프트 공유 파이프라인의 필요성 확인
+- CNL 파서의 복합 조건 처리 분석 과정에서 패턴 분리, 배열화를 통한 일관성 있는 변환 기법 학습
+- 데모 단계에서도 최소한의 UI/UX을 갖춰야 하는 이유를 사용성 휴리스틱 측면에서 체감
+
+---
