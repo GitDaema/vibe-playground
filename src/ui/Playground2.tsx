@@ -5,6 +5,8 @@ import { PreviewPanel } from "./PreviewPanel";
 import { PuzzleProvider, usePuzzle } from "../core/PuzzleContext";
 import { Graph } from "../graph/model";
 import { parseAuthoringCnl, AuthorCnlError } from "../graph/author.cnl";
+import { SharePanel } from "./components/SharePanel";
+import { decodePuzzle } from "../codec/shareCode";
 
 // 예시 퍼즐: 열쇠-자물쇠 (락을 우회하지 못하도록 구성)
 const authorExampleKeyLock = `노드 A, B, C, D를 만든다.
@@ -41,6 +43,31 @@ const PlaygroundContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'solve'>('create');
   const [authorCnl, setAuthorCnl] = useState(authorExampleKeyLock);
   const [authorErrors, setAuthorErrors] = useState<AuthorCnlError[]>([]);
+
+  // Load from URL hash on initial mount
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      try {
+        const decoded = decodePuzzle(hash);
+        const newGraph = new Graph(
+          decoded.graph.nodes,
+          decoded.graph.edges,
+          decoded.graph.startNodeId,
+          decoded.graph.goalNodeId
+        );
+        setGraph(newGraph);
+        resetSimulation();
+        // Switch to solve tab for immediate interaction
+        setActiveTab('solve'); 
+        alert(`Puzzle loaded from URL! Switch to "Solve" tab to begin.`);
+      } catch (error: any) {
+        alert(`Failed to load puzzle from URL hash: ${error.message}`);
+        console.error(error);
+      }
+    }
+  }, [setGraph, resetSimulation]);
+
 
   const handleCreateGraph = useCallback(() => {
     const { graph: newGraph, errors } = parseAuthoringCnl(authorCnl);
@@ -98,6 +125,7 @@ const PlaygroundContent: React.FC = () => {
             goalNodeId={graph.goalNodeId}
           />
         )}
+        <SharePanel />
       </div>
     </div>
   );

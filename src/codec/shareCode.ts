@@ -1,62 +1,117 @@
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
-import { crc32 } from 'crc';
+import { compressToBase64, decompressFromBase64 } from 'lz-string';
+import { str as crc32 } from 'crc-32';
+import { Graph } from '../graph/model';
 
-const SEPARATOR = '.';
+/**
+ * Share Code Schema Version.
+ * v1: Initial schema.
+ */
+export const SHARE_SCHEMA_VERSION = 'v1';
 
-// Base64url 인코딩/디코딩 헬퍼 함수
-function toBase64url(input: string): string {
-  return btoa(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function fromBase64url(input: string): string {
-  input = input.replace(/-/g, '+').replace(/_/g, '/');
-  while (input.length % 4) {
-    input += '=';
-  }
-  return atob(input);
+/**
+ * Defines the data structure for a shareable puzzle.
+ * This structure is serialized to a compact, URL-friendly string.
+ */
+export interface ShareablePuzzle {
+  v: string; // Schema version for compatibility.
+  graph: {
+    nodes: { id: string; x: number; y: number; tags?: string[] }[];
+    edges: { id: string; source: string; target: string; requiresItem?: string }[];
+    startNodeId?: string;
+    goalNodeId?: string;
+  };
+  meta?: {
+    author?: string;
+    createdAt?: string;
+    desc?: string;
+  };
 }
 
 /**
- * 객체를 압축하고 체크섬을 포함하는 공유 코드로 인코딩합니다.
- * @param data 인코딩할 객체
- * @returns Base64url로 인코딩된 공유 코드
+ * Sanitizes and prepares the graph data for serialization.
+ * It sorts keys and arrays to ensure consistent output for the same graph.
+ * @param graph The Graph instance to process.
+ * @param meta Optional metadata for the puzzle.
+ * @returns A stable, serializable object.
  */
-export function encode(data: unknown): string {
-  const jsonString = JSON.stringify(data);
-  const compressed = compressToEncodedURIComponent(jsonString);
-  const checksum = crc32(jsonString).toString(16).padStart(8, '0');
-  
-  const payload = [compressed, checksum].join(SEPARATOR);
-  
-  return toBase64url(payload);
-}
+const toSerializableObject = (graph: Graph, meta?: ShareablePuzzle['meta']): ShareablePuzzle => {
+  // Sort nodes and edges by ID for consistent JSON output
+  const sortedNodes = [...graph.nodes].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedEdges = [...graph.edges].sort((a, b) => a.id.localeCompare(b.id));
+
+  return {
+    v: SHARE_SCHEMA_VERSION,
+    graph: {
+      nodes: sortedNodes.map(({ id, x, y, tags }) => ({ id, x, y, ...(tags && { tags }) })),
+      edges: sortedEdges.map(({ id, source, target, requiresItem }) => ({
+        id,
+        source,
+        target,
+        ...(requiresItem && { requiresItem }),
+      })),
+      startNodeId: graph.startNodeId,
+      goalNodeId: graph.goalNodeId,
+    },
+    ...(meta && { meta }),
+  };
+};
 
 /**
- * 공유 코드를 디코딩하여 원본 객체로 복원하고 무결성을 검증합니다.
- * @param code 디코딩할 공유 코드
- * @returns 복원된 객체
- * @throws 데이터가 변조되었거나 형식이 잘못된 경우 에러 발생
+ * Encodes a puzzle graph and metadata into a compact, URL-friendly "hash slug".
+ * The process: Graph -> JSON -> LZ-String (Base64) -> CRC32 Checksum.
+ * @param graph The Graph instance to encode.
+ * @param meta Optional metadata.
+ * @returns The encoded share code.
  */
-export function decode<T>(code: string): T {
-  const payload = fromBase64url(code);
-  const parts = payload.split(SEPARATOR);
+export const encodePuzzle = (graph: Graph, meta?: ShareablePuzzle['meta']): string => {
+  const serializableObject = toSerializableObject(graph, meta);
+  const json = JSON.stringify(serializableObject);
 
+  // Using compressToBase64 for a more URL-friendly character set.
+  const compressed = compressToBase64(json);
+  
+  // CRC32 checksum for basic data integrity.
+  const checksum = crc32(compressed).toString(16).padStart(8, '0');
+
+  // Format: <checksum>.<compressed_data>
+  return `${checksum}.${compressed}`;
+};
+
+/**
+ * Decodes a "hash slug" back into a puzzle data structure.
+ * It validates the format, checksum, and essential data structure.
+ * @param code The share code to decode.
+ * @returns The decoded puzzle data.
+ * @throws If the code is invalid, corrupted, or fails to parse.
+ */
+export const decodePuzzle = (code: string): ShareablePuzzle => {
+  const parts = code.split('.');
   if (parts.length !== 2) {
-    throw new Error('Invalid share code format.');
+    throw new Error('Invalid share code format. Expected <checksum>.<data>.');
+  }
+  const [checksum, compressed] = parts;
+
+  const calculatedChecksum = crc32(compressed).toString(16).padStart(8, '0');
+  if (checksum !== calculatedChecksum) {
+    throw new Error('Data integrity check failed. The puzzle data may be corrupted or tampered with.');
   }
 
-  const [compressed, checksum] = parts;
-  const jsonString = decompressFromEncodedURIComponent(compressed);
-
-  if (!jsonString) {
-    throw new Error('Failed to decompress data.');
+  const json = decompressFromBase64(compressed);
+  if (!json) {
+    throw new Error('Failed to decompress puzzle data. The code may be invalid.');
   }
 
-  const calculatedChecksum = crc32(jsonString).toString(16).padStart(8, '0');
+  const data = JSON.parse(json) as ShareablePuzzle;
 
-  if (calculatedChecksum !== checksum) {
-    throw new Error('Data integrity check failed. The code may be corrupted.');
+  // Basic structural validation
+  if (!data.v || !data.graph || !Array.isArray(data.graph.nodes) || !Array.isArray(data.graph.edges)) {
+    throw new Error('Invalid puzzle data structure: missing essential fields (v, graph, nodes, edges).');
+  }
+  
+  if (data.v !== SHARE_SCHEMA_VERSION) {
+    // For now, we'll just warn. In the future, we might handle migrations.
+    console.warn(`Schema version mismatch: The provided code is version '${data.v}', but this app uses '${SHARE_SCHEMA_VERSION}'. Attempting to load anyway.`);
   }
 
-  return JSON.parse(jsonString) as T;
-}
+  return data;
+};
