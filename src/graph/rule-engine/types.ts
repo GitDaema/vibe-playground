@@ -43,4 +43,8 @@ export interface PuzzleState {
       tags: string[]; // 'start', 'goal', 'visited' 등
     };
   };
+  ds: {
+    queue: string[];
+    stack: string[];
+  };
 }

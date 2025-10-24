@@ -6,6 +6,20 @@ const CHECKERS: Record<string, ConditionChecker> = {
   at: (state, nodeId) => state.entity.at === nodeId,
   has: (state, itemId) => state.entity.inventory.includes(itemId),
   always: () => true,
+  queueIsEmpty: (state) => state.ds.queue.length === 0,
+  queueNotEmpty: (state) => state.ds.queue.length > 0,
+  stackIsEmpty: (state) => state.ds.stack.length === 0,
+  stackNotEmpty: (state) => state.ds.stack.length > 0,
+  queueContainsNode: (state, nodeId: string) => state.ds.queue.includes(nodeId),
+  stackContainsNode: (state, nodeId: string) => state.ds.stack.includes(nodeId),
+  visited: (state, nodeId: string | 'current') => {
+    const targetNodeId = nodeId === 'current' ? state.entity.at : nodeId;
+    return state.nodes[targetNodeId]?.tags.includes('visited') || false;
+  },
+  notVisited: (state, nodeId: string | 'current') => {
+    const targetNodeId = nodeId === 'current' ? state.entity.at : nodeId;
+    return !state.nodes[targetNodeId]?.tags.includes('visited') || false; // If node doesn't exist, it's not visited
+  },
 };
 
 /**

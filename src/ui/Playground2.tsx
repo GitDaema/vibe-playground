@@ -161,8 +161,21 @@ const AuthoringPanel: React.FC<{cnl: string, setCnl: (c: string) => void, errors
   </>
 );
 
-const SolvingPanel: React.FC<any> = ({hasErrors, step, run, reset, history, feedback, puzzleState, goalNodeId}) => {
+const SolvingPanel: React.FC<{
+  hasErrors: boolean;
+  step: () => void;
+  run: () => void;
+  reset: () => void;
+  history: any[];
+  feedback: string;
+  puzzleState: any;
+  goalNodeId?: string;
+}> = ({hasErrors, step, run, reset, history, feedback, puzzleState, goalNodeId}) => {
   const [actionLog, setActionLog] = useState<string[]>([]);
+  const { setCnl } = usePuzzle(); // Get setCnl directly from context
+
+  const bfsExampleCnl = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 큐에 추가한다
+큐가 비어있지 않다면, 큐에서 다음 노드를 꺼낸다`;
 
   // 성공 로그 수집
   useEffect(() => {
@@ -190,6 +203,7 @@ const SolvingPanel: React.FC<any> = ({hasErrors, step, run, reset, history, feed
         <button className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-50" onClick={step} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Step</button>
         <button className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50" onClick={run} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Run</button>
         <button className="px-3 py-2 rounded bg-slate-200 disabled:opacity-50" onClick={onReset} disabled={!puzzleState}>Reset</button>
+        <button className="px-3 py-2 rounded bg-purple-600 text-white" onClick={() => setCnl(bfsExampleCnl)}>BFS 예시</button>
       </div>
       {/* Action Log: 성공/실패 모두 별도 패널에 표시 */}
       <div className="p-2 border rounded-md bg-gray-50 h-64 overflow-y-auto text-sm mt-2">
