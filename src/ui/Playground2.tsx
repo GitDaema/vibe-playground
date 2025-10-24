@@ -26,6 +26,15 @@ C에서 E로 간선을 잇는다.
 D에서 E로 간선을 잇는다.
 시작은 A, 목표는 E.`;
 
+// 예시 퍼즐: DFS (구조는 BFS와 동일해도 무방하나 버튼 제공 목적)
+const authorExampleDfs = `노드 A, B, C, D, E를 만든다.
+A에서 B로 간선을 잇는다.
+A에서 C로 간선을 잇는다.
+B에서 D로 간선을 잇는다.
+C에서 E로 간선을 잇는다.
+D에서 E로 간선을 잇는다.
+시작은 A, 목표는 E.`;
+
 const PlaygroundContent: React.FC = () => {
   const {
     graph,
@@ -78,6 +87,17 @@ const PlaygroundContent: React.FC = () => {
     }
   }, [authorCnl, setGraph]);
 
+  // 예시 퍼즐을 즉시 생성하고 풀이 탭으로 전환
+  const handleQuickCreate = useCallback((cnlText: string, switchToSolve = true) => {
+    const { graph: newGraph, errors } = parseAuthoringCnl(cnlText);
+    setAuthorErrors(errors);
+    if (errors.length === 0) {
+      setGraph(newGraph);
+      setAuthorCnl(cnlText);
+      if (switchToSolve) setActiveTab('solve');
+    }
+  }, [setGraph]);
+
   const hasSolveErrors = parsingErrors.length > 0 || validationErrors.length > 0;
 
   return (
@@ -112,6 +132,7 @@ const PlaygroundContent: React.FC = () => {
             setCnl={setAuthorCnl}
             errors={authorErrors}
             onCreate={handleCreateGraph}
+            onQuickCreate={(cnlText: string) => handleQuickCreate(cnlText, true)}
           />
         ) : (
           <SolvingPanel
@@ -139,12 +160,17 @@ const TabButton: React.FC<{name: 'create' | 'solve', current: string, set: (tab:
   </button>
 );
 
-const AuthoringPanel: React.FC<{cnl: string, setCnl: (c: string) => void, errors: AuthorCnlError[], onCreate: () => void}> = ({cnl, setCnl, errors, onCreate}) => (
+const AuthoringPanel: React.FC<{cnl: string, setCnl: (c: string) => void, errors: AuthorCnlError[], onCreate: () => void, onQuickCreate: (cnlText: string) => void}> = ({cnl, setCnl, errors, onCreate, onQuickCreate}) => (
   <>
     <h3 className="text-lg font-semibold">퍼즐 만들기 (CNL)</h3>
     <div className="flex gap-2 mb-2">
       <button className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300" onClick={() => setCnl(authorExampleKeyLock)}>예시 퍼즐: 열쇠-자물쇠</button>
       <button className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300" onClick={() => setCnl(authorExampleBfs)}>예시 퍼즐: BFS</button>
+      <button className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300" onClick={() => setCnl(authorExampleDfs)}>예시 퍼즐: DFS</button>
+    </div>
+    <div className="flex gap-2 mb-2">
+      <button className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => onQuickCreate(authorExampleBfs)}>BFS 퍼즐 생성</button>
+      <button className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => onQuickCreate(authorExampleDfs)}>DFS 퍼즐 생성</button>
     </div>
     <textarea
       className="w-full h-64 border rounded-md p-2 text-sm font-mono"
@@ -177,6 +203,9 @@ const SolvingPanel: React.FC<{
   const bfsExampleCnl = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 큐에 추가한다
 큐가 비어있지 않다면, 큐에서 다음 노드를 꺼낸다`;
 
+  const dfsExampleCnl = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 스택에 추가한다
+스택이 빌 때까지, 스택에서 다음 노드를 뺀다`;
+
   // 성공 로그 수집
   useEffect(() => {
     if (history && history.length > 0) {
@@ -204,6 +233,7 @@ const SolvingPanel: React.FC<{
         <button className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50" onClick={run} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Run</button>
         <button className="px-3 py-2 rounded bg-slate-200 disabled:opacity-50" onClick={onReset} disabled={!puzzleState}>Reset</button>
         <button className="px-3 py-2 rounded bg-purple-600 text-white" onClick={() => setCnl(bfsExampleCnl)}>BFS 예시</button>
+        <button className="px-3 py-2 rounded bg-indigo-600 text-white" onClick={() => setCnl(dfsExampleCnl)}>DFS 예시</button>
       </div>
       {/* Action Log: 성공/실패 모두 별도 패널에 표시 */}
       <div className="p-2 border rounded-md bg-gray-50 h-64 overflow-y-auto text-sm mt-2">
@@ -231,4 +261,3 @@ export default function Playground() {
     </PuzzleProvider>
   );
 }
-

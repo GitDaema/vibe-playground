@@ -9,6 +9,9 @@ C에 도착하면, D로 이동한다.`;
 const exampleBfsSolution = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 큐에 추가한다
 큐가 비어있지 않다면, 큐에서 다음 노드를 꺼낸다`;
 
+const exampleDfsSolution = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 스택에 추가한다
+스택이 빌 때까지, 스택에서 다음 노드를 뺀다`;
+
 export default function RuleEditor() {
   const { cnl, setCnl } = usePuzzle();
 
@@ -23,6 +26,7 @@ export default function RuleEditor() {
         <div className="flex gap-2">
           <button onClick={() => setCnl(exampleKeyLock)} className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300">예시 풀이: 열쇠-자물쇠</button>
           <button onClick={() => setCnl(exampleBfsSolution)} className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300">예시 풀이: BFS</button>
+          <button onClick={() => setCnl(exampleDfsSolution)} className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300">예시 풀이: DFS</button>
         </div>
       </div>
       <textarea
@@ -34,4 +38,3 @@ export default function RuleEditor() {
     </div>
   );
 }
-

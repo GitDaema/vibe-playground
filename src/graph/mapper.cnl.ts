@@ -34,6 +34,7 @@ export function parseCnl(cnlText: string): { rules: RuleSet; errors: CnlParsingE
   const lines = cnlText.split('\n').filter(line => line.trim() !== '');
   const rules: RuleSet = [];
   const errors: CnlParsingError[] = [];
+  let pendingWhen: Rule['when'] = [];
 
   lines.forEach((line, index) => {
     const lineNumber = index + 1;
@@ -51,175 +52,178 @@ export function parseCnl(cnlText: string): { rules: RuleSet; errors: CnlParsingE
 
       let thenClauseFound = false;
 
+      let lineWhen: Rule['when'] = [];
+      let lineThen: Rule['then'] = [];
       for (const clause of clauses) {
+        const normalizedClause = clause.trim();
         let matched = false;
         let m: RegExpMatchArray | null;
 
         // WHEN: 결합형 (열쇠를 가지고 있고 B에 도착하면)
-        m = clause.match(RE_WHEN_COMBINED);
+        m = normalizedClause.match(RE_WHEN_COMBINED);
         if (m) {
           if (thenClauseFound) throw new CnlParsingError('조건 절이 동작 이후에 나왔습니다.', lineNumber);
-          rule.when.push({ has: m[1].trim() });
-          rule.when.push({ at: m[2].trim() });
+          lineWhen.push({ has: m[1].trim() });
+          lineWhen.push({ at: m[2].trim() });
           matched = true;
         }
 
         // WHEN: 단일 위치 (A에 도착하면)
         if (!matched) {
-          m = clause.match(RE_WHEN_AT);
+          m = normalizedClause.match(RE_WHEN_AT);
           if (m) {
             if (thenClauseFound) throw new CnlParsingError('조건 절이 동작 이후에 나왔습니다.', lineNumber);
-            rule.when.push({ at: m[1].trim() });
+            lineWhen.push({ at: m[1].trim() });
             matched = true;
           }
         }
 
         // WHEN: 큐가 빌 때까지
         if (!matched) {
-          m = clause.match(RE_WHEN_QUEUE_NOT_EMPTY);
+          m = normalizedClause.match(RE_WHEN_QUEUE_NOT_EMPTY);
           if (m) {
             if (thenClauseFound) throw new CnlParsingError('조건 절이 동작 이후에 나왔습니다.', lineNumber);
-            rule.when.push({ queueNotEmpty: true });
+            lineWhen.push({ queueNotEmpty: true });
             matched = true;
           }
         }
 
         // WHEN: 스택이 빌 때까지
         if (!matched) {
-          m = clause.match(RE_WHEN_STACK_NOT_EMPTY);
+          m = normalizedClause.match(RE_WHEN_STACK_NOT_EMPTY);
           if (m) {
             if (thenClauseFound) throw new CnlParsingError('조건 절이 동작 이후에 나왔습니다.', lineNumber);
-            rule.when.push({ stackNotEmpty: true });
+            lineWhen.push({ stackNotEmpty: true });
             matched = true;
           }
         }
 
         // WHEN: 아직 방문하지 않았다면 (현재 노드)
         if (!matched) {
-          m = clause.match(RE_WHEN_NOT_VISITED_CURRENT);
+          m = normalizedClause.match(RE_WHEN_NOT_VISITED_CURRENT);
           if (m) {
             if (thenClauseFound) throw new CnlParsingError('조건 절이 동작 이후에 나왔습니다.', lineNumber);
-            rule.when.push({ notVisited: 'current' });
+            lineWhen.push({ notVisited: 'current' });
             matched = true;
           }
         }
 
         // WHEN: X를 아직 방문하지 않았다면
         if (!matched) {
-          m = clause.match(RE_WHEN_NOT_VISITED_NODE);
+          m = normalizedClause.match(RE_WHEN_NOT_VISITED_NODE);
           if (m) {
             if (thenClauseFound) throw new CnlParsingError('조건 절이 동작 이후에 나왔습니다.', lineNumber);
-            rule.when.push({ notVisited: m[1].trim() });
+            lineWhen.push({ notVisited: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 이동 (정식/축약)
         if (!matched) {
-          m = clause.match(RE_THEN_MOVE) || clause.match(RE_THEN_MOVE_SH);
+          m = normalizedClause.match(RE_THEN_MOVE) || normalizedClause.match(RE_THEN_MOVE_SH);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ moveTo: m[1].trim() });
+            lineThen.push({ moveTo: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 줍는다
         if (!matched) {
-          m = clause.match(RE_THEN_PICKUP);
+          m = normalizedClause.match(RE_THEN_PICKUP);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ pickup: m[1].trim() });
+            lineThen.push({ pickup: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 버린다/사용한다
         if (!matched) {
-          m = clause.match(RE_THEN_DROP);
+          m = normalizedClause.match(RE_THEN_DROP);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ drop: m[1].trim() });
+            lineThen.push({ drop: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 큐에 X를 추가한다
         if (!matched) {
-          m = clause.match(RE_THEN_ADD_TO_QUEUE);
+          m = normalizedClause.match(RE_THEN_ADD_TO_QUEUE);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ addToQueue: m[1].trim() });
+            lineThen.push({ addToQueue: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 큐에서 다음 노드를 꺼낸다
         if (!matched) {
-          m = clause.match(RE_THEN_POP_FROM_QUEUE);
+          m = normalizedClause.match(RE_THEN_POP_FROM_QUEUE);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ popFromQueue: true });
+            lineThen.push({ popFromQueue: true });
             matched = true;
           }
         }
 
         // THEN: 스택에 X를 넣는다/추가한다
         if (!matched) {
-          m = clause.match(RE_THEN_ADD_TO_STACK);
+          m = normalizedClause.match(RE_THEN_ADD_TO_STACK);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ addToStack: m[1].trim() });
+            lineThen.push({ addToStack: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 스택에서 다음 노드를 뺀다
         if (!matched) {
-          m = clause.match(RE_THEN_POP_FROM_STACK);
+          m = normalizedClause.match(RE_THEN_POP_FROM_STACK);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ popFromStack: true });
+            lineThen.push({ popFromStack: true });
             matched = true;
           }
         }
 
         // THEN: 방문 표시를 한다 (현재 노드)
         if (!matched) {
-          m = clause.match(RE_THEN_MARK_VISITED_CURRENT);
+          m = normalizedClause.match(RE_THEN_MARK_VISITED_CURRENT);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ markVisited: 'current' });
+            lineThen.push({ markVisited: 'current' });
             matched = true;
           }
         }
 
         // THEN: X를 방문 표시한다
         if (!matched) {
-          m = clause.match(RE_THEN_MARK_VISITED_NODE);
+          m = normalizedClause.match(RE_THEN_MARK_VISITED_NODE);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ markVisited: m[1].trim() });
+            lineThen.push({ markVisited: m[1].trim() });
             matched = true;
           }
         }
 
         // THEN: 이웃을 큐에 추가한다
         if (!matched) {
-          m = clause.match(RE_THEN_ENQUEUE_NEIGHBORS_QUEUE);
+          m = normalizedClause.match(RE_THEN_ENQUEUE_NEIGHBORS_QUEUE);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ enqueueNeighbors: { onlyUnvisited: true, avoidDuplicates: true, target: 'queue' } });
+            lineThen.push({ enqueueNeighbors: { onlyUnvisited: true, avoidDuplicates: true, target: 'queue' } });
             matched = true;
           }
         }
 
         // THEN: 이웃을 스택에 추가한다
         if (!matched) {
-          m = clause.match(RE_THEN_ENQUEUE_NEIGHBORS_STACK);
+          m = normalizedClause.match(RE_THEN_ENQUEUE_NEIGHBORS_STACK);
           if (m) {
             thenClauseFound = true;
-            rule.then.push({ enqueueNeighbors: { onlyUnvisited: true, avoidDuplicates: true, target: 'stack' } });
+            lineThen.push({ enqueueNeighbors: { onlyUnvisited: true, avoidDuplicates: true, target: 'stack' } });
             matched = true;
           }
         }
@@ -229,22 +233,27 @@ export function parseCnl(cnlText: string): { rules: RuleSet; errors: CnlParsingE
         }
       }
 
-      // then이 하나도 없으면 오류
-      if (rule.then.length === 0) {
+      // 라인 수준에서 수집된 when/then을 결합
+      const uniq = <T,>(arr: T[]) => Array.from(new Map(arr.map(a => [JSON.stringify(a), a])).values());
+
+      lineWhen = uniq(lineWhen);
+      lineThen = uniq(lineThen);
+
+      // then이 없는 순수 조건 라인은 버퍼에 적재하고 다음 라인을 기다린다.
+      if (lineThen.length === 0) {
+        if (lineWhen.length > 0) {
+          pendingWhen = uniq([...pendingWhen, ...lineWhen]);
+          return; // 다음 라인으로
+        }
+        // 조건도 행동도 없는 라인은 무시되었거나 위에서 예외 발생
         throw new CnlParsingError('규칙에 동작(then)이 없습니다.', lineNumber);
       }
 
-      // 조건이 비어 있으면 always 추가
-      if (rule.when.length === 0) {
-        rule.when.push({ always: true });
-      }
-
-      // 중복 제거
-      const uniq = <T,>(arr: T[]) => Array.from(new Map(arr.map(a => [JSON.stringify(a), a])).values());
-      rule.when = uniq(rule.when);
-      rule.then = uniq(rule.then);
-
-      rules.push(rule);
+      // 실제 규칙 구성: 이전 라인의 조건(pendingWhen) + 현재 라인의 조건(lineWhen)
+      const finalWhen = (pendingWhen.length > 0 || lineWhen.length > 0) ? uniq([...pendingWhen, ...lineWhen]) : [{ always: true }];
+      const finalRule: Rule = { when: finalWhen, then: lineThen, sourceLine: lineNumber };
+      rules.push(finalRule);
+      pendingWhen = [];
     } catch (e) {
       if (e instanceof CnlParsingError) {
         errors.push(e);
@@ -253,6 +262,10 @@ export function parseCnl(cnlText: string): { rules: RuleSet; errors: CnlParsingE
       }
     }
   });
+
+  if (pendingWhen.length > 0) {
+    errors.push(new CnlParsingError('조건 절 뒤에 동작(then) 절이 필요합니다. 예: "..., 이동: B"', lines.length));
+  }
 
   return { rules, errors };
 }

@@ -18,7 +18,9 @@ const CHECKERS: Record<string, ConditionChecker> = {
   },
   notVisited: (state, nodeId: string | 'current') => {
     const targetNodeId = nodeId === 'current' ? state.entity.at : nodeId;
-    return !state.nodes[targetNodeId]?.tags.includes('visited') || false; // If node doesn't exist, it's not visited
+    const node = state.nodes[targetNodeId];
+    if (!node) return false; // 존재하지 않는 노드는 조건 판정하지 않음
+    return !node.tags.includes('visited');
   },
 };
 
