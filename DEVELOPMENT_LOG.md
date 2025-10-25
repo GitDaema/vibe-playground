@@ -175,7 +175,7 @@
 프로젝트 방향을 다시 재정립할게. Day3 프롬프트를 아래와 같이 리셋해줘.
 
 # 역할
-너는 “Vibe Playground” 프로젝트의 AI 협업 파트너로,  
+너는 "Vibe Playground" 프로젝트의 AI 협업 파트너로,  
 현재 Day1~2까지의 개발 결과를 기반으로  
 프로젝트 방향을 **그래프 기반 퍼즐 샌드박스**로 재정립한다.  
 
@@ -195,7 +195,7 @@ GEMINI.md와 README.md를 그에 맞게 갱신해야 한다.
    - 서버, DB, 백엔드 전혀 사용하지 않음
 2. **AI 협업**
    - Gemini CLI가 자연어를 구조화된 Graph DSL(JSON)으로 변환
-   - 예: “A에서 B로 연결해줘.” → `{ "action":"add_edge","from":"A","to":"B" }`
+   - 예: "A에서 B로 연결해줘." → `{ "action":"add_edge","from":"A","to":"B" }`
 3. **문제 제작과 공유**
    - 사용자는 자연어로 그래프를 생성하고 목표(start/goal)를 설정  
    - 결과를 직렬화·압축해 **도전 코드(Challenge Code)** 로 공유 가능
@@ -236,11 +236,11 @@ GEMINI.md와 README.md를 그에 맞게 갱신해야 한다.
 
 | 사용자 입력 | Gemini 해석 결과 |
 |--------------|------------------|
-| “노드 A, B, C를 만들어줘.” | `{"action":"add_nodes","nodes":["A","B","C"]}` |
-| “A에서 B, C로 연결해줘.” | `{"action":"add_edges","edges":[["A","B"],["A","C"]]}` |
-| “A를 시작, F를 목표로 해줘.” | `{"action":"set_goal","start":"A","goal":"F"}` |
-| “너비 우선 탐색으로 실행해.” | BFS 규칙 JSON 템플릿 |
-| “결과를 공유 코드로 만들어줘.” | `{"action":"export_challenge"}` |
+| "노드 A, B, C를 만들어줘." | `{"action":"add_nodes","nodes":["A","B","C"]}` |
+| "A에서 B, C로 연결해줘." | `{"action":"add_edges","edges":[["A","B"],["A","C"]]}` |
+| "A를 시작, F를 목표로 해줘." | `{"action":"set_goal","start":"A","goal":"F"}` |
+| "너비 우선 탐색으로 실행해." | BFS 규칙 JSON 템플릿 |
+| "결과를 공유 코드로 만들어줘." | `{"action":"export_challenge"}` |
 
 ---
 
@@ -248,9 +248,9 @@ GEMINI.md와 README.md를 그에 맞게 갱신해야 한다.
 
 ### 🧩 1️⃣ 문제 제작자 모드
 1. 사용자가 입력:  
-   > “노드 A, B, C, D 만들어줘.”  
-   > “A에서 B, C로 연결하고, B는 D로 이어줘.”  
-   > “A를 시작, D를 목표로 해줘.”
+   > "노드 A, B, C, D 만들어줘."  
+   > "A에서 B, C로 연결하고, B는 D로 이어줘."  
+   > "A를 시작, D를 목표로 해줘."
 2. Gemini CLI 해석 결과:  
    - Graph JSON 생성  
    - `v1_Graph_A2dDkWc==` 공유 코드 생성
@@ -259,12 +259,12 @@ GEMINI.md와 README.md를 그에 맞게 갱신해야 한다.
 ---
 
 ### 🧩 2️⃣ 도전자 모드
-1. 친구가 “도전 코드”를 입력 → 문제 로드  
+1. 친구가 "도전 코드"를 입력 → 문제 로드  
 2. 동일 그래프 렌더링  
 3. 자연어로 탐색 규칙 입력:
-   > “방문한 노드는 초록색으로 표시해.”  
-   > “아직 방문하지 않은 노드는 큐에 추가해.”  
-   > “큐가 빌 때까지 다음 노드 방문을 반복해.”
+   > "방문한 노드는 초록색으로 표시해."  
+   > "아직 방문하지 않은 노드는 큐에 추가해."  
+   > "큐가 빌 때까지 다음 노드 방문을 반복해."
 4. Gemini CLI 변환 결과:
    ```json
    [
@@ -274,7 +274,7 @@ GEMINI.md와 README.md를 그에 맞게 갱신해야 한다.
    ]
    ```
 5. 시뮬레이션 실행 → A→B→C→D 탐색 후 목표 도달  
-   - “Goal Reached in 4 steps!” 표시  
+   - "Goal Reached in 4 steps!" 표시  
    - Proof Code 자동 생성 → `proof_v1_BFS_4steps_Z19Q==`
 
 ---
@@ -308,12 +308,12 @@ Gemini CLI는 아래 두 문서를 자동 재작성해야 한다:
 
 1. **GEMINI.md**
    - 프로젝트 목적, AI 협업 구조, CNL → Rule 변환 흐름, 예시 포함
-   - “그래프 퍼즐 샌드박스” 중심으로 작성
+   - "그래프 퍼즐 샌드박스" 중심으로 작성
    - 자연어 입력/해시 공유/리플레이 개념 포함
 
 2. **README.md**
    - 전체 개요, 주요 기능, 실행 방법, 사용 예시, 기술 스택 명시
-   - “서버 없는 AI 그래프 퍼즐 샌드박스” 문구 포함
+   - "서버 없는 AI 그래프 퍼즐 샌드박스" 문구 포함
 
 ---
 
@@ -336,19 +336,19 @@ Gemini CLI는 아래 두 문서를 자동 재작성해야 한다:
 
 #### 문제 및 해결 과정
 1.  **초회 프롬프트를 이용한 물리 퍼즐 제작 실패**
-    -   Gemini CLI와 Codex를 함께 사용하여 물리 엔진 구현을 시도했으나 실패
-    -   개발 기간을 고려해 실현 가능한 주제로 프로젝트 재정립
+    - Gemini CLI와 Codex를 함께 사용하여 물리 엔진 구현을 시도했으나 실패
+    - 개발 기간을 고려해 실현 가능한 주제로 프로젝트 재정립
 
 2.  **Gemini CLI의 반복적인 동일 오류 해결 실패**
-    -   Gemini CLI와 Codex를 병행하는 에이전트 오케스트레이션 기법 선택
-    -   Gemini CLI는 프로젝트 전체 설계 및 스크립트 작성, 단일 버그 수정 할당
-    -   Codex는 코드 분석, 복합 버그 수정, 리팩토링 할당
-    -   둘의 결과를 종합하여 핵심 문제 발견, 오류 해결 성공
+    - Gemini CLI와 Codex를 병행하는 에이전트 오케스트레이션 기법 선택
+    - Gemini CLI는 프로젝트 전체 설계 및 스크립트 작성, 단일 버그 수정 할당
+    - Codex는 코드 분석, 복합 버그 수정, 리팩토링 할당
+    - 둘의 결과를 종합하여 핵심 문제 발견, 오류 해결 성공
 
 3.  **원격 저장소와 로컬 Git 계정 불일치 문제**
-    -   GitHub 원격 저장소에 푸시된 커밋의 작성자가 의도하지 않은 서브 계정임을 확인
-    -   VS Code 연동 계정과 로컬 컴퓨터의 Git 전역 설정에 등록된 계정이 다른 것이 원인
-    -   본계정 정보로 올바르게 재설정한 뒤 테스트용 커밋 푸시를 통해 해결
+    - GitHub 원격 저장소에 푸시된 커밋의 작성자가 의도하지 않은 서브 계정임을 확인
+    - VS Code 연동 계정과 로컬 컴퓨터의 Git 전역 설정에 등록된 계정이 다른 것이 원인
+    - 본계정 정보로 올바르게 재설정한 뒤 테스트용 커밋 푸시를 통해 해결
 
 #### 학습 내용
 - Gemini CLI와 Codex를 함께 사용해 상황 별로 적절한 도구를 호출하는 에이전트 기법 사용.
@@ -430,7 +430,7 @@ src/
 
 ---
 
-## �� 커밋 메시지 제안
+## 커밋 메시지 제안
 feat: implement CNL parser and rule engine for rule-based puzzles [ai-assist]  
 chore: update README and GEMINI docs for Day4 progress [ai-assist]
 
@@ -461,37 +461,225 @@ npm run dev
 
 #### 프롬프트 적용 결과
 - **기초 시스템 확립**  
-    -   CNL 파서(`src/graph/mapper.cnl.ts`), 규칙 스키마(`src/graph/validation/rule.schema.json`), 타입 정의(`src/graph/rule-engine/types.ts`) 추가.
-    -   RuleEngine 본체/조건/행동(`RuleEngine.ts`, `conditions.ts`, `actions.ts`) 구현, immer 도입.
+    - CNL 파서(`src/graph/mapper.cnl.ts`), 규칙 스키마(`src/graph/validation/rule.schema.json`), 타입 정의(`src/graph/rule-engine/types.ts`) 추가.
+    - RuleEngine 본체/조건/행동(`RuleEngine.ts`, `conditions.ts`, `actions.ts`) 구현, immer 도입.
 - **UI 통합**
-    -   `src/core/PuzzleContext.tsx` 신설(상태/로직 허브), `PreviewPanel.tsx` 실시간 파싱/검증 미리보기
-    -   `RuleEditor.tsx` 리팩터링, `Playground.tsx` 오케스트레이션 및 Step/Run/Reset/로그, `GraphCanvas.tsx` 이동 및 Goal 하이라이트.
+    - `src/core/PuzzleContext.tsx` 신설(상태/로직 허브), `PreviewPanel.tsx` 실시간 파싱/검증 미리보기
+    - `RuleEditor.tsx` 리팩터링, `Playground.tsx` 오케스트레이션 및 Step/Run/Reset/로그, `GraphCanvas.tsx` 이동 및 Goal 하이라이트.
 - **실행 루프 환경 확보**
-    -   그래프 생성 -> 규칙 입력 -> 시뮬레이션 실행 -> 결과 확인의 전체 루프 완성
+    - 그래프 생성 -> 규칙 입력 -> 시뮬레이션 실행 -> 결과 확인의 전체 루프 완성
 
 ![실행 화면 스크린샷](./screenshots/day4-1-making-puzzle.png)
 ![실행 화면 스크린샷](./screenshots/day4-2-solving-puzzle.png)
 
 #### 문제 및 해결 과정
 1. **인공지능 모델 간 소통 부재**  
-    -   Gemini CLI가 Codex가 수정한 주요 파일 누락 및 충돌 발생
-    -   파일 재수정, 이어가기 프롬프트를 활용해 복구
+    - Gemini CLI가 Codex가 수정한 주요 파일 누락 및 충돌 발생
+    - 파일 재수정, 이어가기 프롬프트를 활용해 복구
 
 2. **ESM 런타임 오류**
-    -   타입을 값으로 임포트하는 `verbatimModuleSyntax` -> TS/런타임 에러 발생
-    -   `import type`으로 타입 전용 임포트 분리, 불필요한 기본 React 임포트 제거
+    - 타입을 값으로 임포트하는 `verbatimModuleSyntax` -> TS/런타임 에러 발생
+    - `import type`으로 타입 전용 임포트 분리, 불필요한 기본 React 임포트 제거
 
 3. **이동 허용 처리 중 그래프 검증 과정 누락**
-    -   RuleEngine이 그래프 간선 및 현재 개체 상태를 검증하지 않고 이동을 허용
-    -   엔진이 실제 그래프 구조를 기반으로만 이동하도록 수정
+    - RuleEngine이 그래프 간선 및 현재 개체 상태를 검증하지 않고 이동을 허용
+    - 엔진이 실제 그래프 구조를 기반으로만 이동하도록 수정
 
 4. **UI 배치 충돌**
-    -   Step/Run/Reset 버튼이 로그/캔버스 위에 겹치는 문제가 발생
-    -   상단 툴바로 버튼 이동, HUD 패널 신설하여 시뮬레이션 가독성 향상
+    - Step/Run/Reset 버튼이 로그/캔버스 위에 겹치는 문제가 발생
+    - 상단 툴바로 버튼 이동, HUD 패널 신설하여 시뮬레이션 가독성 향상
 
 #### 학습 내용
-- 에이전트 기법의 위험성 및 모델 간 프롬프트 공유 파이프라인의 필요성 확인
-- CNL 파서의 복합 조건 처리 분석 과정에서 패턴 분리, 배열화를 통한 일관성 있는 변환 기법 학습
-- 데모 단계에서도 최소한의 UI/UX을 갖춰야 하는 이유를 사용성 휴리스틱 측면에서 체감
+- 에이전트 기법의 위험성 및 모델 간 **프롬프트 공유 파이프라인**의 필요성 확인
+- CNL 파서의 복합 조건 처리 분석 과정에서 **패턴 분리**, **배열화**를 통한 일관성 있는 변환 기법 학습
+- 데모 단계에서도 최소한의 UI/UX을 갖춰야 하는 이유를 **사용성 휴리스틱 측면**에서 체감
 
 ---
+
+### Day 5 — 퍼즐 공유·복원, BFS/DFS 실행, CNL 안정화
+
+#### GEMINI CLI 사용 프롬프트
+
+gemini run --role "Day5 개발 페어 프로그래밍 어시스턴트" --goal "
+🎯 목표:
+Vibe Playground의 Day5 작업을 진행한다.
+'해시 슬러그'로 퍼즐(그래프/메타)을 생성·복원하여 서버 없이 공유할 수 있게 한다.
+제작자는 퍼즐을 만들고 성공한 뒤 해시를 생성·복사해 공유한다.
+도전자는 해시를 붙여넣거나 URL 해시로 로드해 동일 퍼즐을 복원해 풀이한다.
+
+---
+
+## 📘 현재 상황(프로젝트 분석 요약)
+- 그래프 퍼즐 런타임
+  - RuleEngine/conditions/actions로 규칙 기반 스텝 실행
+  - 이동 제약: 실제 간선 + requiresItem 충족 시만 이동
+  - PuzzleContext로 그래프/규칙/상태/로그 UI 통합
+- CNL
+  - 규칙 CNL 파서(mapper.cnl.ts): 한글 정규식·결합 조건 지원
+  - 저작 CNL 파서(author.cnl.ts): 노드/간선/락/아이템/시작·목표 정의
+- UI
+  - Playground2: 탭(퍼즐 만들기/퍼즐 풀기), 예시 버튼(열쇠-자물쇠/BFS), Action Log
+  - GraphCanvas2: 🔒(점선/금색/아이템명), 🔑(노드 아이템)
+- 빌드/검증
+  - NLU 제외(tsconfig.app.json), import type 사용(ESM verbatimModuleSyntax 대응)
+
+---
+
+## 🚀 Day5 주요 개발 목표
+1) 퍼즐 해시 슬러그 생성(Encode)
+- 입력: { version, graph:{ nodes[id,x,y,tags?], edges[id,source,target,requiresItem?], startNodeId?, goalNodeId? }, meta?{ author, createdAt, desc }, shareSchemaVersion }
+- 직렬화: JSON → LZ-string(UTF16 또는 Base64) → Base64url → CRC32(간단 무결성) → 최종 코드
+- 안정화: 키 정렬/불필요 필드 제거/좌표·문자 인코딩 일관화
+- 버전: shareSchemaVersion('v1')로 호환성 관리
+
+2) 퍼즐 해시 슬러그 복원(Decode)
+- 입력: code 문자열
+- 역직렬화: Base64url → LZ 복원 → JSON 파싱 → CRC32 검증
+- 검증: Ajv(선택) 또는 경량 검증(필수 필드 체크)
+- Graph 인스턴스화: Graph 클래스에 매핑(start/goal/nodes/edges/tags/requiresItem)
+- 실패 시 구체 메시지: CRC 실패/버전 미스매치/필드 누락
+
+3) UI 통합(Share 패널)
+- Playground2 우측 영역에 Share 섹션 추가(탭 공통 사용)
+- 기능:
+  - Copy Share Code: 현재 그래프를 encode→클립보드 복사
+  - Load from Code: 입력 코드 decode→setGraph→resetSimulation
+  - URL 해시(#<code>) 자동 복원(선택): 첫 로드 시 decode→setGraph
+- 피드백: 성공/에러 메시지, 복원 요약(노드/간선/시작/목표 간단 표시)
+
+4) 문서/UX
+- README/GEMINI: Share Code 섹션 추가(개념, 사용법, 제한, 보안 고려)
+- 예시: 코드 생성→복원→풀이 흐름 간단 스크린샷/텍스트
+
+---
+
+## 🧱 파일 구조(신규/수정)
+src/
+ ├─ codec/
+ │   └─ shareCode.ts            # encodePuzzle/decodePuzzle(base64url/lz/crc)
+ ├─ ui/
+ │   ├─ Playground2.tsx         # Share 패널 임베드 + URL 해시 로드 처리
+ │   └─ components/
+ │       └─ SharePanel.tsx      # (선호 시 분리) 코드 복사/불러오기 UI
+ ├─ graph/
+ │   └─ model.ts                # Node.tags?, Edge.requiresItem? 유지
+ ├─ core/
+ │   └─ PuzzleContext.tsx       # setGraph 이후 resetSimulation 훅 유지
+ └─ schemas/
+     └─ share-code.schema.json  # (선택) Ajv 검증 스키마
+
+tests/
+ ├─ codec.share.test.ts         # round-trip/CRC/버전 테스트
+ └─ playground.hash.test.ts     # (선택) URL 해시/SharePanel smoke
+
+---
+
+## ✅ 수용 기준(AC)
+- encodePuzzle: Graph → code 문자열 생성
+- decodePuzzle: code → 동일 Graph 복원(노드/간선/락/아이템/시작/목표)
+- CRC/버전/필드 오류 시 의미있는 에러 문구
+- Share 패널: Copy/Load 동작 및 성공/실패 메시지
+- (선택) URL #code 자동 복원
+- 빌드/테스트 통과
+
+---
+
+## ⚙️ 구현 가이드
+- Base64url: '+'→'-', '/'→'_', '=' 제거
+- LZ-string: 브라우저 호환 모드(UTF16/BASE64) 중 택1(코멘트에 명시)
+- CRC32: 4~8 hex 트렁케이트(간단 무결성), 헤더/페이로드 분리 가능
+- 스키마 최소 필수:
+  - nodes[].{ id:string, x:number, y:number, tags?:string[] }
+  - edges[].{ id:string, source:string, target:string, requiresItem?:string }
+  - startNodeId?:string, goalNodeId?:string
+  - v/shareSchemaVersion:string
+- UI:
+  - SharePanel: textarea + [Copy]/[Load] + 상태 메시지
+  - Playground2: mount 시 location.hash 있으면 decode→setGraph→resetSimulation
+- 안전:
+  - decode 실패 시 상태 변경 금지, 메시지로만 안내
+  - XSS 방지: 코드 문자열은 텍스트로만 다루기
+
+---
+
+## 🧪 테스트 시나리오
+- codec.share.test.ts
+  - round-trip: graph → code → graph' (deepEqual)
+  - tamper: code 일부 수정 → CRC 실패
+  - version mismatch: v2 코드 입력 → 경고/설명 노출
+  - 최소 그래프/락·아이템 포함 그래프 모두 검증
+- playground.hash.test.ts(선택)
+  - SharePanel Load 동작 후 캔버스 반영
+  - URL #code 접근 시 자동 복원 및 초기화 확인
+
+---
+
+## 📝 커밋 메시지 제안
+feat(share): add puzzle hash encode/decode and Share panel [ai-assist]
+docs: update README/GEMINI for Day5 sharing workflow [ai-assist]
+test(codec): round-trip + tamper + version mismatch cases [ai-assist]
+
+---
+
+## 🧰 실행 명령어
+npm run dev
+npm run build
+npm test
+
+---
+
+## ✅ 출력 형식(필수 산출물)
+- 신규/수정 파일 코드 전문
+  - src/codec/shareCode.ts
+  - src/ui/Playground2.tsx 또는 src/ui/components/SharePanel.tsx
+  - (선택) schemas/share-code.schema.json
+- README.md/GEMINI.md 수정(“Day5 퍼즐 공유/복원” 섹션 추가)
+- tests/codec.share.test.ts (+ 선택적 UI 테스트)
+- 실행/검증 가이드(코드 복사/붙여넣기 예시 포함)
+"
+
+[Day 5 Gemini 전체 대화 로그 보기](./gemini_cli_logs/Day5-Log.md)
+[Day 5 Codex 전체 대화 로그 보기](./codex_logs/Day5-Log-Codex.md)
+
+#### 프롬프트 적용 결과
+  - **퍼즐 공유/복원**: 코드 복사/붙여넣기 및 **URL 해시 로드** 정상 동작  
+  - **BFS/DFS 실행**: 큐/스택/방문/이웃 추가 동작으로 Step/Run 진행, Goal 도달 시 종료  
+  - **CNL 안정화**:  
+    - 제작 CNL: "노드 A, B 생성", "A에서 B로 간선을 잇는다", "B→C는 ‘열쇠’ 필요" 등 자연 구문 처리  
+    - 풀이 CNL: "A에 도착하면 / 이동: B" 형식의 **멀티라인 WHEN→THEN** 규칙 컴파일  
+  - **UI/UX**: BFS/DFS 퍼즐·풀이 **예시 버튼**으로 원클릭 체험 경로 제공  
+  - **문서화**: 타입/값 import 가이드, 허용 표현, 테스트·검증법 명시
+
+![실행 화면 스크린샷](./screenshots/day5-1-hash.png)
+![실행 화면 스크린샷](./screenshots/day5-2-bfs.png)
+![실행 화면 스크린샷](./screenshots/day5-3-existing-cnl-format.png)
+![실행 화면 스크린샷](./screenshots/day5-4-other-cnl-format.png)
+
+#### 문제 및 해결 과정
+1. **런타임 import 오류**  
+  - 문제: `shareCode.ts:3 Uncaught SyntaxError: ... does not provide an export named 'Edge'`  
+  - 원인: `verbatimModuleSyntax: true`에서 **타입을 값 import**로 가져옴  
+  - 조치: `Node/Edge` **type-only import**로 분리 → 값 import에는 `Graph`만 유지
+
+2. **BFS 반복/정지 불가**  
+  - 문제: `notVisited` 조건이 항상 true, 시작 노드에서 다른 노드로 이동 불가  
+  - 조치: 실제 방문 여부를 점검하도록 로직 수정, `markVisited`와 연계
+
+3. **저자 CNL 오인식**  
+  - 문제: "노드 A, B, C, D를 만든다." → `D를`이 노드로 생성  
+  - 원인: 조사 제거 미흡
+  - 조치: `norm.ts`에서 **토큰 말미 조사 제거** 강화, `author.cnl.ts`에서 **알파뉴메릭 노드만** 추출
+
+4. **풀이 CNL 매칭 실패**  
+  - 증상: "A에 도착하면", "열쇠를 가지고 있고 B에 도착하면" 미매칭  
+  - 원인: 토큰 말미 조사 제거 과정에서 패턴 파괴  
+  - 조치: **풀이 파서에서 전처리 제거**, 원문 기반 정규식 매칭 + **멀티라인 WHEN 누적** 도입
+
+5. **유연 파싱 vs 레거시 폴백 경합**  
+  - 문제: 매칭 수정 후 기존 인식 문장 중 하나인 "A에서 B로 간선을 잇는다" 해석 불가
+  - 조치: **유연 파싱 실패 시 레거시 정규식 폴백** 보장(의도별 체인)
+
+#### 학습 내용
+  - **CNL 유연화**는 "정규화(조사/동의어) -> 의도/슬롯 추출 -> 스키마 검증" 3단 구성으로 안정성 
+  - "전처리로 조사 제거"는 **풀이 CNL**에서 핵심 패턴을 깨뜨릴 수 있으므로 **원문 유지**가 안전  
+  - 타입/값 import 분리는 **번들 단계 런타임 오류**를 예방하는 필수 수칙

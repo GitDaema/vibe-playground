@@ -1,7 +1,7 @@
 [ai-assist] auto-update
 # Vibe Playground: Graph Puzzle Sandbox - AI 협업 가이드
 
-**최종 업데이트: 2025-10-22**
+**최종 업데이트: 2025-10-24**
 
 # 역할
 너는 “Vibe Playground” 프로젝트의 AI 협업 파트너로,  
@@ -16,20 +16,20 @@
 ### 핵심 목표
 1. **서버 없는 환경**: 모든 데이터는 LocalStorage와 Base64 해시 코드를 통해 처리되며, 별도의 백엔드 서버를 사용하지 않는다.
 2. **AI 협업**: Gemini CLI가 사용자의 자연어 입력을 구조화된 Graph DSL(JSON)으로 변환한다.  
-   - 예: “A에서 B로 연결해줘.” → `{ "action":"add_edge","from":"A","to":"B" }`
+   - 예: “A B 연결” → `{ "action":"add_edges","edges":[["A","B"]] }`
 3. **문제 제작과 공유**: 사용자는 자연어로 그래프 구조를 만들고 시작(start)과 목표(goal) 노드를 설정한 뒤, 이를 **도전 코드(Challenge Code)**로 압축하여 공유한다.
 4. **문제 풀이와 검증**: 다른 사용자는 공유 코드를 입력해 그래프를 복원하고, 자연어로 탐색 규칙(예: BFS, DFS)을 설계한다. Gemini가 이를 JSON Rule로 변환하여 시뮬레이션을 실행하며, 성공 시 **Proof Code**를 생성해 풀이 과정을 공유할 수 있다.
 
 ---
 
-## ⚙️ 기술 구조 (Day4 기준)
+## ⚙️ 기술 구조 (Day5 기준)
 
 | 구분 | 주요 파일 | 역할 |
 |---|---|---|
 | **A. Core Layer** | `src/core/engine.ts`<br>`src/core/dsl.ts`<br>`src/core/PuzzleContext.tsx` | Tick 기반 결정론적 시뮬레이터 및 이벤트/액션 기반 Rule 실행기, 퍼즐 상태 통합 관리 |
-| **B. Graph Layer** | `src/graph/model.ts`<br>`src/graph/engine.ts`<br>`src/graph/mapper.cnl.ts`<br>`src/graph/rule-engine/RuleEngine.ts`<br>`src/graph/rule-engine/conditions.ts`<br>`src/graph/rule-engine/actions.ts`<br>`src/graph/rule-engine/types.ts`<br>`src/graph/validation/rule.schema.json` | Node, Edge, Graph 구조 정의, CNL 파서, 규칙 엔진, 조건/행동 정의, 규칙 스키마 |
-| **C. AI & NLU Layer** | `src/nlu/mapper.ko.ts`<br>`src/schemas/graph-rule.schema.json`<br>`src/codec/shareCode.ts` | (기존) 제한된 한국어(CNL) → Rule JSON 변환, Ajv 스키마 검증, LZ-String + Base64url 직렬화/복원 |
-| **D. UI Layer** | `src/ui/BuildMode.tsx`<br>`src/ui/PlayMode.tsx`<br>`src/ui/GraphCanvas.tsx`<br>`src/ui/RuleEditor.tsx`<br>`src/ui/PreviewPanel.tsx`<br>`src/ui/Playground.tsx` | 그래프 제작/도전 모드, 그래프 시각화, 자연어 규칙 입력 및 미리보기, 메인 퍼즐 실행 화면 |
+| **B. Graph Layer** | `src/graph/model.ts`<br>`src/graph/author.cnl.ts`<br>`src/graph/mapper.cnl.ts`<br>`src/graph/rule-engine/...` | Node, Edge, Graph 구조 정의, 저자용/규칙 CNL 파서 (고도화), 규칙 엔진, 조건/행동 정의 |
+| **C. AI & NLU Layer** | `src/nlu/ko/dict.ts`<br>`src/nlu/ko/norm.ts`<br>`src/codec/shareCode.ts` | 한국어 동의어 사전 및 정규화 유틸리티, 퍼즐 공유 코드 직렬화/복원 |
+| **D. UI Layer** | `src/ui/Playground2.tsx`<br>`src/ui/RuleEditor.tsx`<br>`src/ui/components/SharePanel.tsx` | 메인 퍼즐 실행 화면, 자연어 규칙 입력기, 퍼즐 공유/로드 UI |
 
 ---
 
@@ -37,13 +37,13 @@
 
 | 사용자 입력 | Gemini 해석 결과 (JSON) |
 |---|---|
-| “노드 A, B, C를 만들어줘.” | `{"action":"add_nodes","nodes":["A","B","C"]}` |
-| “A에서 B, C로 연결해줘.” | `{"action":"add_edges","edges":[["A","B"],["A","C"]]}` |
-| “A를 시작, F를 목표로 해줘.” | `{"action":"set_goal","start":"A","goal":"F"}` |
-| “너비 우선 탐색으로 실행해.” | BFS 규칙 JSON 템플릿 자동 생성 |
-| “결과를 공유 코드로 만들어줘.” | `{"action":"export_challenge"}` |
-| “방문한 노드는 초록색으로 표시해.” | `{"event":"visit","action":"markColor","params":{"color":"green"}}` |
-| “큐가 빌 때까지 다음 노드 방문을 반복해.” | `{"event":"tick","condition":"!queue.empty","action":"visitNext"}` |
+| “노드 A, B 생성” | `{ "action":"add_nodes","nodes":["A","B"] }` |
+| “A B 연결” | `{ "action":"add_edges","edges":[["A","B"]] }` |
+| “B와 C를 잇는 간선을 지나려면 열쇠가 필요하다” | `{ "action":"lock_edge","from":"B","to":"C","requires":"열쇠" }` |
+| “B에 열쇠가 있다” | `{ "action":"place_item","node":"B","item":"열쇠" }` |
+| “큐가 비어있지 않다면” | `{ "when": [{ "queueNotEmpty": true }] }` |
+| “방문 표시를 한다” | `{ "then": [{ "markVisited": "current" }] }` |
+| “이웃을 큐에 추가한다” | `{ "then": [{ "enqueueNeighbors": { "target": "queue" } }] }` |
 
 ---
 
@@ -51,7 +51,7 @@
 
 | 단계 | AI 역할 | 설명 |
 |---|---|---|
-| 1 | **자연어 → DSL(JSON) 변환** | 사용자의 명령 의도를 분석하여 그래프 구조 및 규칙을 JSON 형식으로 변환한다. |
+| 1 | **자연어 정규화 및 DSL 변환** | 사용자의 명령을 정규화(동의어, 조사 처리)하고, 의도를 분석하여 구조화된 JSON으로 변환한다. |
 | 2 | **Rule 템플릿 추천** | "너비 우선 탐색"과 같은 복합 명령에 대해 BFS, DFS 등 사전 정의된 Rule 템플릿을 자동으로 생성 및 제안한다. |
 | 3 | **JSON 스키마 검증** | 생성된 Rule이 Ajv 스키마에 맞는지 실시간으로 검증하여 유효성을 보장한다. |
 | 4 | **직렬화 및 복원** | 생성된 그래프(Challenge) 또는 풀이(Proof)를 LZ-String, Base64url, CRC32를 통해 압축된 공유 코드로 변환하거나 복원한다. |
@@ -71,6 +71,7 @@
 4. 프롬프트와 응답은 DEVELOPMENT_LOG.md에 기록.
 5. 각 단계가 완료된 후, 변경 사항을 검증하거나 테스트할 수 있는 방법을 제안하고 사용자 확인을 기다립니다.
 6. 커밋 메시지를 추천할 때는 Conventional Commits 양식을 지켜 영어로 작성하고 제목 뒤에는 `with Gemini CLI`와 같이 인공지능 사용 여부를 명시. 커밋 본문에는 AI와 사용자 간의 협업 내용을 구체적으로 명시. `git commit` 실행 시에는 제목과 본문 각 단락에 `-m` 플래그를 개별적으로 사용하여 전체 메시지가 누락되지 않도록 주의한다.
+7. 사용자와의 모든 상호작용은 한국어로 진행한다.
 
 **출력 순서 (그래프 중심으로 재구성):**
 1) `src/graph/model.ts` (Node, Edge, Graph 타입 정의)
@@ -85,34 +86,101 @@
 
 ---
 
-## ✅ Day4 개발 완료
+## ✅ Day5 개발 완료
 
-Day4 목표였던 **규칙 기반 퍼즐 시스템 기초 완성**을 성공적으로 마쳤습니다.
+Day5 목표였던 **퍼즐 공유/복원 시스템 구현 및 CNL 해석 엔진 고도화**를 성공적으로 마쳤습니다.
 
--   **CNL 파이프라인 고도화**:
-    -   `src/graph/rule-engine/types.ts`: 규칙, 조건, 행동 타입 정의
-    -   `src/graph/validation/rule.schema.json`: 규칙 JSON 스키마 정의
-    -   `src/graph/mapper.cnl.ts`: CNL 템플릿 파서 구현 (정규식 → 토큰 → JSON 변환 및 에러 처리)
--   **규칙 기반 엔진(RuleEngine.ts) 구현**:
-    -   `src/graph/rule-engine/conditions.ts`: 조건 평가 로직 구현
-    -   `src/graph/rule-engine/actions.ts`: 행동 실행 로직 구현
-    -   `src/graph/rule-engine/RuleEngine.ts`: 규칙 실행 루프 및 상태 관리 엔진 구현
--   **UI 통합**:
-    -   `src/core/PuzzleContext.tsx`: 퍼즐 상태 통합 관리 Context 구현
-    -   `src/ui/PreviewPanel.tsx`: CNL 파싱 결과 및 오류 미리보기 UI 추가
-    -   `src/ui/RuleEditor.tsx`: `PuzzleContext`와 연동하여 CNL 입력 및 실시간 파싱
-    -   `src/ui/Playground.tsx`: 메인 퍼즐 실행 화면으로 재구성, 시뮬레이션 제어 및 로그 표시
-    -   `src/ui/GraphCanvas.tsx`: 개체(Entity) 움직임 및 목표 노드 시각화 확장
--   **의존성 설치**: `immer`, `ajv` 설치 완료.
+-   **퍼즐 공유/복원 시스템 구현**:
+    -   `src/codec/shareCode.ts`: `encodePuzzle`/`decodePuzzle` 함수를 통해 퍼즐의 그래프 구조를 LZ-String, Base64, CRC32를 사용하여 압축된 해시 코드로 변환하고 복원하는 기능을 구현했습니다.
+    -   `src/ui/components/SharePanel.tsx`: 퍼즐 코드를 복사하고 붙여넣어 로드할 수 있는 UI 컴포넌트를 추가했습니다.
+    -   `src/ui/Playground2.tsx`: URL 해시(#)를 통해 퍼즐을 직접 로드하는 기능을 통합했습니다.
 
-이제 사용자는 자연어로 규칙을 작성하고, 실시간으로 파싱 결과를 확인하며, 규칙 엔진을 통해 그래프 퍼즐을 단계별로 시뮬레이션할 수 있습니다.
+-   **BFS/DFS 지원을 위한 규칙 엔진 확장**:
+    -   `src/graph/rule-engine/types.ts`: `PuzzleState`에 `ds.queue`와 `ds.stack`을 추가하여 자료구조를 관리할 수 있도록 확장했습니다.
+    -   `src/graph/rule-engine/actions.ts`: `addToQueue`, `popFromQueue`, `addToStack`, `popFromStack`, `markVisited`, `enqueueNeighbors` 등 BFS/DFS 알고리즘 구현에 필수적인 액션을 추가했습니다.
+    -   `src/graph/rule-engine/conditions.ts`: `queueNotEmpty`, `stackNotEmpty`, `visited`, `notVisited` 등 알고리즘의 흐름을 제어하는 조건들을 추가했습니다.
+    -   `src/core/PuzzleContext.tsx`: 퍼즐 시작 시 큐와 스택이 올바르게 초기화되도록 수정했습니다.
+
+-   **CNL(한국어 제약 자연어) 해석 엔진 고도화**:
+    -   `src/nlu/ko/dict.ts`, `src/nlu/ko/norm.ts`: 동의어 사전과 텍스트 정규화 유틸리티를 도입하여 NLU 파이프라인의 기반을 마련했습니다.
+    -   `src/graph/author.cnl.ts`: 저자용 CNL 파서를 개선하여 "노드 A, B 생성", "A B 연결"과 같이 더 유연하고 자연스러운 구문을 해석할 수 있도록 확장했습니다.
+    -   `src/graph/mapper.cnl.ts`: 규칙 CNL 파서에 정규화 로직을 적용하여 "큐가 비어있지 않다면"과 같은 다양한 표현을 안정적으로 처리하도록 개선했습니다.
+
+-   **UI/UX 개선**:
+    -   `src/ui/Playground2.tsx`, `src/ui/RuleEditor.tsx`: BFS/DFS 예시 퍼즐과 풀이 규칙을 자동으로 채워주는 버튼을 추가하여 사용자가 쉽게 기능을 테스트하고 학습할 수 있도록 했습니다.
+
+-   **테스트 및 안정화**:
+    -   `tests/cnl.author.parse.test.ts`, `tests/cnl.rules.parse.test.ts`: 새로운 CNL 파싱 로직에 대한 단위 테스트를 추가하여 안정성을 검증했습니다.
+    -   기존 테스트와의 호환성을 유지하며 모든 테스트가 통과함을 확인했습니다.
 
 ## 🧠 향후 계획 명시 (Day4~Day6 로드맵)
 | 일차 | 주요 목표 | 상세 설명 |
 |------|------------|-----------|
 | **Day4** | ✅ 규칙 기반 퍼즐 시스템 기초 완성 | CNL 파서 + RuleEngine + 미리보기 UI 구축 |
-| **Day5** | 퍼즐 공유/복원 시스템 구현 | 제작자 성공 시 최소 규칙 수 기록 및 해시 생성 |
-| **Day6** | ✅ **최종 완성 — ‘규칙 기반 그래프 퍼즐’ 완전 구현** | <br>1. 제작자: 그래프 제작 → 규칙 작성 → 직접 성공 → 공유 코드 생성<br>2. 도전자: 공유 코드 불러오기 → 규칙 작성 → 실행 → 성공 시 비교(규칙 수)<br>3. ‘규칙으로 사고하는 코딩 퍼즐 환경’ 완성 |
+| **Day5** | ✅ 퍼즐 공유/복원 시스템 및 CNL 고도화 | 해시 코드 공유, BFS/DFS 엔진 로직 및 자연어 파서 확장 |
+| **Day6** | 최종 완성 — ‘규칙 기반 그래프 퍼즐’ 완전 구현 | <br>1. 제작자: 그래프 제작 → 규칙 작성 → 직접 성공 → 공유 코드 생성<br>2. 도전자: 공유 코드 불러오기 → 규칙 작성 → 실행 → 성공 시 비교(규칙 수)<br>3. ‘규칙으로 사고하는 코딩 퍼즐 환경’ 완성 |
+
+**검증 기준:**
+- 자동평가 조건(파일, 커밋, 문서, 테스트) 충족.
+- AI 협업 과정이 기록으로 증명됨.
+- 그래프 생성/규칙 적용/Proof 생성 3개 핵심 기능 동작.
+
+---
+
+## ⚠️ 타입/값 Import 오류 방지 가이드 (필독)
+
+본 프로젝트는 `tsconfig.app.json`에서 `verbatimModuleSyntax: true`와 `moduleResolution: bundler`를 사용합니다. 이 설정에서는 타입을 값처럼 import하면 런타임까지 그대로 보존되어 브라우저/번들 단계에서 다음과 같은 오류가 발생합니다:
+
+> The requested module '...' does not provide an export named 'Edge'
+
+이 문제를 방지하기 위한 지침은 아래와 같습니다.
+
+### 반드시 지킬 것
+- 타입(인터페이스, 타입 별칭 등)은 `import type`으로만 가져온다.
+- 값(클래스, 함수, 상수 등)만 일반 `import`로 가져온다.
+- 타입을 재수출할 때는 `export type { ... }`를 사용한다. 값은 `export { ... }`를 사용한다.
+- 한 모듈에서 값과 타입을 동시에 가져올 때는 다음 두 형태 중 하나를 사용한다.
+  - 분리형: `import { Graph } from '../graph/model';` + `import type { Node, Edge } from '../graph/model';`
+  - 한 줄형: `import { Graph, type Edge, type Node } from '../graph/model';`
+
+### 올바른/잘못된 예시
+
+잘못된 예시 (런타임 오류 유발):
+
+```ts
+// ❌ 인터페이스를 값처럼 import 함
+import { Graph, Node, Edge } from '../graph/model';
+```
+
+올바른 예시:
+
+```ts
+// ✅ 값은 값으로
+import { Graph } from '../graph/model';
+// ✅ 타입은 타입으로
+import type { Node, Edge } from '../graph/model';
+```
+
+재수출 시:
+
+```ts
+// ✅ 값 재수출
+export { Graph } from './model';
+// ✅ 타입 재수출
+export type { Node, Edge } from './model';
+```
+
+### 체크리스트 (Gemini CLI 코드 생성 전)
+- 타입 심볼을 일반 `import { ... }`에 포함시키지 않았는가?
+- `import { type ... }` 또는 별도의 `import type { ... }`로 분리했는가?
+- 재수출 시 `export type`과 `export`를 혼용하지 않았는가?
+- 오류 메시지에 “does not provide an export named”가 보이면, 타입/값 구분을 먼저 점검한다.
+
+### 관련 맥락
+- 해당 설정에서는 타입 전용이 아닌 import가 번들에 그대로 남아 실제 ESM import로 시도됩니다. 인터페이스/타입은 런타임에 존재하지 않으므로 위와 같은 네임드 export 미존재 오류가 발생합니다.
+- 예: `src/codec/shareCode.ts`는 `Graph`만 런타임 값으로 import하고, `Node`/`Edge`가 필요하면 `import type`으로 가져와야 합니다.
+
+이 섹션은 가이드라인 추가일 뿐, 기존 지침에는 변경을 가하지 않습니다.
 
 **검증 기준:**
 - 자동평가 조건(파일, 커밋, 문서, 테스트) 충족.
