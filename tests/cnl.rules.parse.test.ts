@@ -14,10 +14,12 @@ describe('Rules CNL Parser - Flexible Syntax', () => {
     expect(rules[0].then).toContainEqual({ popFromQueue: true });
   });
 
-  it('should parse "큐가 비어있지 않다면"', () => {
+  it('should return an error for a when-clause without a then-clause', () => {
     const cnl = '큐가 비어있지 않다면';
-    const { rules } = parseCnl(cnl);
-    expect(rules[0].when).toContainEqual({ queueNotEmpty: true });
+    const { rules, errors } = parseCnl(cnl);
+    expect(rules).toHaveLength(0);
+    expect(errors).not.toHaveLength(0);
+    expect(errors[0].message).toContain('조건 절 뒤에 동작(then) 절이 필요합니다');
   });
 
   it('should parse "이웃을 큐에 추가"', () => {
@@ -27,8 +29,8 @@ describe('Rules CNL Parser - Flexible Syntax', () => {
   });
 
   it('should parse a full BFS rule', () => {
-    const cnl = '아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 큐에 추가한다
-큐가 비어있지 않다면, 큐에서 다음 노드를 꺼낸다';
+    const cnl = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 큐에 추가한다
+큐가 비어있지 않다면, 큐에서 다음 노드를 꺼낸다`;
     const { rules, errors } = parseCnl(cnl);
     expect(errors).toHaveLength(0);
     expect(rules).toHaveLength(2);

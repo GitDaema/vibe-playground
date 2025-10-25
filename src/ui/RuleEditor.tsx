@@ -2,7 +2,6 @@ import React from "react";
 import { usePuzzle } from "../core/PuzzleContext";
 
 const exampleKeyLock = `A에 도착하면, B로 이동한다.
-B에 도착하면, 열쇠를 줍는다.
 열쇠를 가지고 있고 B에 도착하면, C로 이동한다.
 C에 도착하면, D로 이동한다.`;
 
