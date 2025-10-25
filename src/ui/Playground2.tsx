@@ -1,74 +1,21 @@
 import React, { useEffect, useState, useCallback } from "react";
-import GraphCanvas from "./GraphCanvas";
+import GraphCanvas from "./GraphCanvas2";
 import RuleEditor from "./RuleEditor";
 import { PreviewPanel } from "./PreviewPanel";
 import { PuzzleProvider, usePuzzle } from "../core/PuzzleContext";
 import { Graph } from "../graph/model";
-import { parseAuthoringCnl, type ParserAction, type ErrorAction } from "../graph/author.cnl";
+import { parseAuthoringCnl, AuthorCnlError } from "../graph/author.cnl";
 import { SharePanel } from "./components/SharePanel";
 import { decodePuzzle } from "../codec/shareCode";
 
-// Helper function to apply parser actions to a graph
-function applyParserActions(actions: ParserAction[]): { graph: Graph, errors: ErrorAction[] } {
-  const graph = new Graph();
-  const errors: ErrorAction[] = [];
-
-  for (const item of actions) {
-    if (item.action === 'error') {
-      errors.push(item);
-      continue;
-    }
-
-    switch (item.action) {
-      case 'add_nodes':
-        item.nodes.forEach(nodeId => graph.addNode({ id: nodeId }));
-        break;
-      case 'add_edges':
-        item.edges.forEach(([from, to]) => {
-          graph.addNode({ id: from }); // Ensure nodes exist
-          graph.addNode({ id: to });
-          graph.addEdge({ id: `${from}${to}`, source: from, target: to });
-        });
-        break;
-      case 'lock_edge':
-        graph.lockEdge(item.from, item.to, item.requires);
-        break;
-      case 'place_item':
-        graph.addNode({ id: item.node }); // Ensure node exists
-        const node = graph.nodes.find(n => n.id === item.node);
-        if (node) {
-          if (!node.tags) node.tags = [];
-          node.tags.push(`item:${item.item}`);
-        }
-        break;
-      case 'set_start_goal':
-        graph.startNodeId = item.start;
-        graph.goalNodeId = item.goal;
-        graph.addNode({ id: item.start });
-        graph.addNode({ id: item.goal });
-        break;
-      case 'set_start':
-        graph.startNodeId = item.start;
-        graph.addNode({ id: item.start });
-        break;
-      case 'set_goal':
-        graph.goalNodeId = item.goal;
-        graph.addNode({ id: item.goal });
-        break;
-    }
-  }
-  return { graph, errors };
-}
-
-
 // 예시 퍼즐: 열쇠-자물쇠 (락을 우회하지 못하도록 구성)
-const authorExampleKeyLock = `노드 A, B, C, D를 만든다
-A에서 B로 간선을 잇는다
-B에서 C로 간선을 잇는다
-C에서 D로 간선을 잇는다
-B→C는 '열쇠'가 필요하다
-B에 '열쇠'가 있다
-시작은 A, 목표는 D`;
+const authorExampleKeyLock = `노드 A, B, C, D를 만든다.
+A에서 B로 간선을 잇는다.
+B에서 C로 간선을 잇는다.
+C에서 D로 간선을 잇는다.
+B→C는 '열쇠'가 필요하다.
+B에 '열쇠'가 있다.
+시작은 A, 목표는 D.`;
 
 // 예시 퍼즐: BFS(비가중 최단 경로)
 const authorExampleBfs = `노드 A, B, C, D, E를 만든다.
@@ -104,7 +51,7 @@ const PlaygroundContent: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'create' | 'solve'>('create');
   const [authorCnl, setAuthorCnl] = useState(authorExampleKeyLock);
-  const [authorErrors, setAuthorErrors] = useState<ErrorAction[]>([]);
+  const [authorErrors, setAuthorErrors] = useState<AuthorCnlError[]>([]);
 
   // Load from URL hash on initial mount
   useEffect(() => {
@@ -132,20 +79,17 @@ const PlaygroundContent: React.FC = () => {
 
 
   const handleCreateGraph = useCallback(() => {
-    const { actions } = parseAuthoringCnl(authorCnl);
-    const { graph: newGraph, errors } = applyParserActions(actions);
-    
+    const { graph: newGraph, errors } = parseAuthoringCnl(authorCnl);
     setAuthorErrors(errors);
     if (errors.length === 0) {
       setGraph(newGraph);
+      // 자동 전환하지 않음: 제작 → 확인/수정 → 풀이 흐름을 지원
     }
   }, [authorCnl, setGraph]);
 
   // 예시 퍼즐을 즉시 생성하고 풀이 탭으로 전환
   const handleQuickCreate = useCallback((cnlText: string, switchToSolve = true) => {
-    const { actions } = parseAuthoringCnl(cnlText);
-    const { graph: newGraph, errors } = applyParserActions(actions);
-
+    const { graph: newGraph, errors } = parseAuthoringCnl(cnlText);
     setAuthorErrors(errors);
     if (errors.length === 0) {
       setGraph(newGraph);

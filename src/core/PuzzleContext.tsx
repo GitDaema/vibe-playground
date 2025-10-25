@@ -1,9 +1,10 @@
 import { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Graph } from '../graph/model';
-import { parseCnl, type CnlParsingError } from '../graph/mapper.cnl';
+import { parseCnl, CnlParsingError } from '../graph/mapper.cnl';
 import type { RuleSet, PuzzleState } from '../graph/rule-engine/types';
-import { RuleEngine, type StepResult } from '../graph/rule-engine/RuleEngine';
+import { RuleEngine } from '../graph/rule-engine/RuleEngine';
+import type { StepResult } from '../graph/rule-engine/RuleEngine';
 import Ajv from 'ajv';
 import ruleSchema from '../graph/validation/rule.schema.json';
 

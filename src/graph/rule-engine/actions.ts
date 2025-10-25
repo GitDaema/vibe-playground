@@ -6,31 +6,12 @@ import type { Graph } from '../model';
 type ActionExecutor = (state: PuzzleState, params: any, graph: Graph) => PuzzleState;
 type ActionValidator = (state: PuzzleState, params: any, graph: Graph) => boolean;
 
-function autoPickupAllAtCurrent(draft: PuzzleState) {
-  const node = draft.nodes[draft.entity.at];
-  if (!node || !node.tags) return;
-  const items = node.tags
-    .filter(t => t.startsWith('item:'))
-    .map(t => t.slice('item:'.length))
-    .filter(Boolean);
-  if (items.length === 0) return;
-  for (const itemId of items) {
-    if (!draft.entity.inventory.includes(itemId)) {
-      draft.entity.inventory.push(itemId);
-    }
-  }
-  // Remove all picked items from the node
-  node.tags = node.tags.filter(t => !t.startsWith('item:'));
-}
-
 const EXECUTORS: Record<string, ActionExecutor> = {
   moveTo: produce((draft, nodeId, graph) => {
     const edge = graph.edges.find(e => e.source === draft.entity.at && e.target === nodeId);
     if (edge) {
       if (!edge.requiresItem || draft.entity.inventory.includes(edge.requiresItem)) {
         draft.entity.at = nodeId;
-        // Auto-pickup any items on arrival
-        autoPickupAllAtCurrent(draft);
       }
     }
   }),
@@ -60,8 +41,6 @@ const EXECUTORS: Record<string, ActionExecutor> = {
       const nextNode = draft.ds.queue.shift();
       if (nextNode) {
         draft.entity.at = nextNode;
-        // Auto-pickup any items on arrival
-        autoPickupAllAtCurrent(draft);
       }
     }
   }),
@@ -75,8 +54,6 @@ const EXECUTORS: Record<string, ActionExecutor> = {
       const nextNode = draft.ds.stack.pop();
       if (nextNode) {
         draft.entity.at = nextNode;
-        // Auto-pickup any items on arrival
-        autoPickupAllAtCurrent(draft);
       }
     }
   }),

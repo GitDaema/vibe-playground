@@ -29,24 +29,6 @@ This project allows users to build graph puzzles and design search algorithms us
 -   **Challenge & Proof Sharing (도전과 증명 공유):** 생성한 퍼즐(Challenge)이나 성공한 풀이 과정(Proof)을 고유한 해시 코드로 변환하여 어디서든 공유하고 재현할 수 있습니다.
 -   **Serverless Architecture (서버 없는 구조):** 모든 데이터는 브라우저의 LocalStorage와 URL 해시를 통해 관리되므로, 별도의 서버나 데이터베이스가 필요 없습니다.
 
-## 🌊 Core User Flow (핵심 사용자 흐름)
-
-1.  **퍼즐 제작 (Create):**
-    -   `퍼즐 만들기` 탭에서 자연어(CNL)로 그래프 구조를 설계합니다. (예: `노드 A, B 생성`, `A B 연결`)
-    -   `그래프 생성` 버튼을 눌러 퍼즐을 시각적으로 확인하고 수정합니다.
-
-2.  **공유 (Share):**
-    -   완성된 퍼즐을 다른 사람에게 공유하기 위해 `Copy Share Code` 버튼을 클릭합니다.
-    -   클립보드에 복사된 코드를 친구나 동료에게 전달합니다.
-
-3.  **복원 (Load):**
-    -   공유받은 코드를 `Paste share code here...` 영역에 붙여넣고 `Load from Code` 버튼을 클릭합니다.
-    -   또는, URL 주소 뒤에 `#`과 함께 코드를 붙여넣어 (`.../#<share_code>`) 바로 퍼즐을 로드할 수 있습니다.
-
-4.  **풀이 (Solve):**
-    -   `퍼즐 풀기` 탭으로 이동하여, 로드된 퍼즐을 해결할 규칙을 자연어로 작성합니다.
-    -   `Step` 또는 `Run` 버튼으로 시뮬레이션을 실행하며 해결 과정을 시각적으로 확인합니다.
-
 ## 🛠️ Tech Stack (기술 스택)
 
 -   **Frontend:** React, TypeScript
