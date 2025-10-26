@@ -132,7 +132,6 @@ const PlaygroundContent: React.FC = () => {
             setCnl={setAuthorCnl}
             errors={authorErrors}
             onCreate={handleCreateGraph}
-            onQuickCreate={(cnlText: string) => handleQuickCreate(cnlText, true)}
           />
         ) : (
           <SolvingPanel
@@ -160,17 +159,13 @@ const TabButton: React.FC<{name: 'create' | 'solve', current: string, set: (tab:
   </button>
 );
 
-const AuthoringPanel: React.FC<{cnl: string, setCnl: (c: string) => void, errors: AuthorCnlError[], onCreate: () => void, onQuickCreate: (cnlText: string) => void}> = ({cnl, setCnl, errors, onCreate, onQuickCreate}) => (
+const AuthoringPanel: React.FC<{cnl: string, setCnl: (c: string) => void, errors: AuthorCnlError[], onCreate: () => void}> = ({cnl, setCnl, errors, onCreate}) => (
   <>
     <h3 className="text-lg font-semibold">퍼즐 만들기 (CNL)</h3>
     <div className="flex gap-2 mb-2">
       <button className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300" onClick={() => setCnl(authorExampleKeyLock)}>예시 퍼즐: 열쇠-자물쇠</button>
       <button className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300" onClick={() => setCnl(authorExampleBfs)}>예시 퍼즐: BFS</button>
       <button className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300" onClick={() => setCnl(authorExampleDfs)}>예시 퍼즐: DFS</button>
-    </div>
-    <div className="flex gap-2 mb-2">
-      <button className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => onQuickCreate(authorExampleBfs)}>BFS 퍼즐 생성</button>
-      <button className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => onQuickCreate(authorExampleDfs)}>DFS 퍼즐 생성</button>
     </div>
     <textarea
       className="w-full h-64 border rounded-md p-2 text-sm font-mono"
@@ -200,6 +195,12 @@ const SolvingPanel: React.FC<{
   const [actionLog, setActionLog] = useState<string[]>([]);
   const { setCnl } = usePuzzle(); // Get setCnl directly from context
 
+  // 열쇠-자물쇠 퍼즐 예시 정답: A→B→C→D로 진행
+  // (B의 아이템은 자동 습득되므로 pickup 규칙 불필요)
+  const keyLockSolutionCnl = `A에 도착하면 B로 이동한다
+B에 도착하면 C로 이동한다
+C에 도착하면 D로 이동한다`;
+
   const bfsExampleCnl = `아직 방문하지 않았다면, 방문 표시를 한다, 이웃을 큐에 추가한다
 큐가 비어있지 않다면, 큐에서 다음 노드를 꺼낸다`;
 
@@ -228,10 +229,16 @@ const SolvingPanel: React.FC<{
 
   return (
     <>
-      <div className="flex gap-2">
+      {/* 1행: Step / Run / Reset */}
+      <div className="flex flex-wrap gap-2 items-center">
         <button className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-50" onClick={step} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Step</button>
         <button className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50" onClick={run} disabled={hasErrors || !puzzleState || puzzleState.entity.at === goalNodeId}>Run</button>
         <button className="px-3 py-2 rounded bg-slate-200 disabled:opacity-50" onClick={onReset} disabled={!puzzleState}>Reset</button>
+      </div>
+
+      {/* 2행: 열쇠-자물쇠 정답 / BFS 예시 / DFS 예시 */}
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        <button className="px-3 py-2 rounded bg-amber-600 text-white" onClick={() => setCnl(keyLockSolutionCnl)}>열쇠-자물쇠 정답</button>
         <button className="px-3 py-2 rounded bg-purple-600 text-white" onClick={() => setCnl(bfsExampleCnl)}>BFS 예시</button>
         <button className="px-3 py-2 rounded bg-indigo-600 text-white" onClick={() => setCnl(dfsExampleCnl)}>DFS 예시</button>
       </div>

@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "npm ci && npm run dev"
   },
   "dependencies": {
     "ajv": "^8.17.1",
