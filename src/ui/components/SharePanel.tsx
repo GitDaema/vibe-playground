@@ -3,6 +3,26 @@ import { usePuzzle } from '../../core/PuzzleContext';
 import { encodePuzzle, decodePuzzle } from '../../codec/shareCode';
 import { Graph } from '../../graph/model';
 
+// LocalStorage helpers (scoped & versioned)
+const LS_KEYS = {
+  graph: 'vibe/v1/graph',
+} as const;
+
+function persistGraph(graph: Graph) {
+  try {
+    if (typeof window === 'undefined') return;
+    const data = {
+      nodes: graph.nodes,
+      edges: graph.edges,
+      startNodeId: graph.startNodeId,
+      goalNodeId: graph.goalNodeId,
+    };
+    window.localStorage.setItem(LS_KEYS.graph, JSON.stringify(data));
+  } catch {
+    // ignore failures
+  }
+}
+
 export default function SharePanel() {
   const { graph, setGraph, resetSimulation } = usePuzzle();
   const [shareCode, setShareCode] = useState('');
@@ -50,6 +70,7 @@ export default function SharePanel() {
         );
         setGraph(newGraph);
         resetSimulation();
+        persistGraph(newGraph);
         setMessage({ type: 'success', text: `퍼즐 복원 완료! (${decoded.graph.nodes.length} 노드, ${decoded.graph.edges.length} 간선)` });
       } catch (error: any) {
         setMessage({ type: 'error', text: `복원 실패: ${error.message}` });

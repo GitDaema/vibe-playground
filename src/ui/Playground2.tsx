@@ -8,6 +8,42 @@ import { parseAuthoringCnl, AuthorCnlError } from "../graph/author.cnl";
 import SharePanel from "./components/SharePanel";
 import { decodePuzzle } from "../codec/shareCode";
 
+// LocalStorage keys (scoped & versioned)
+const LS_KEYS = {
+  authorCnl: 'vibe/v1/authorCnl',
+  graph: 'vibe/v1/graph',
+} as const;
+
+function saveGraphToLocalStorage(graph: Graph) {
+  try {
+    if (typeof window === 'undefined') return;
+    const data = {
+      nodes: graph.nodes,
+      edges: graph.edges,
+      startNodeId: graph.startNodeId,
+      goalNodeId: graph.goalNodeId,
+    };
+    window.localStorage.setItem(LS_KEYS.graph, JSON.stringify(data));
+  } catch (e) {
+    // Ignore storage failures for stability
+    console.warn('Failed to save graph to LocalStorage:', e);
+  }
+}
+
+function loadGraphFromLocalStorage(): Graph | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(LS_KEYS.graph);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) return null;
+    return new Graph(parsed.nodes, parsed.edges, parsed.startNodeId, parsed.goalNodeId);
+  } catch (e) {
+    console.warn('Failed to load graph from LocalStorage:', e);
+    return null;
+  }
+}
+
 // 예시 퍼즐: 열쇠-자물쇠 (락을 우회하지 못하도록 구성)
 const authorExampleKeyLock = `노드 A, B, C, D를 만든다.
 A에서 B로 간선을 잇는다.
@@ -66,6 +102,8 @@ const PlaygroundContent: React.FC = () => {
           decoded.graph.goalNodeId
         );
         setGraph(newGraph);
+        // Persist loaded graph
+        saveGraphToLocalStorage(newGraph);
         resetSimulation();
         // Switch to solve tab for immediate interaction
         setActiveTab('solve'); 
@@ -77,12 +115,41 @@ const PlaygroundContent: React.FC = () => {
     }
   }, [setGraph, resetSimulation]);
 
+  // Fallback: restore from LocalStorage when no URL hash present
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash) return;
+    const savedGraph = loadGraphFromLocalStorage();
+    if (savedGraph) {
+      setGraph(savedGraph);
+      resetSimulation();
+    }
+    try {
+      const savedAuthor = window.localStorage.getItem(LS_KEYS.authorCnl);
+      if (savedAuthor) setAuthorCnl(savedAuthor);
+    } catch {
+      // ignore
+    }
+  }, [setGraph, resetSimulation]);
+
+  // Persist authoring CNL on change (best effort)
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(LS_KEYS.authorCnl, authorCnl);
+      }
+    } catch {
+      // ignore persistence failures
+    }
+  }, [authorCnl]);
+
 
   const handleCreateGraph = useCallback(() => {
     const { graph: newGraph, errors } = parseAuthoringCnl(authorCnl);
     setAuthorErrors(errors);
     if (errors.length === 0) {
       setGraph(newGraph);
+      saveGraphToLocalStorage(newGraph);
       // 자동 전환하지 않음: 제작 → 확인/수정 → 풀이 흐름을 지원
     }
   }, [authorCnl, setGraph]);
@@ -94,6 +161,7 @@ const PlaygroundContent: React.FC = () => {
     if (errors.length === 0) {
       setGraph(newGraph);
       setAuthorCnl(cnlText);
+      saveGraphToLocalStorage(newGraph);
       if (switchToSolve) setActiveTab('solve');
     }
   }, [setGraph]);

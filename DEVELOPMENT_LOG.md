@@ -809,6 +809,14 @@ UI를 전면 재디자인하지 않고 다음 세 가지 요소를 통합적으�
   - 문제: `parseAuthoringCnl`이 `{ actions }`만 반환 → 기존 테스트(`graph/errors`) 실패  
   - 조치: `applyParserActions()`로 actions → graph 변환 후 `{ actions, graph, errors }` 반환 구조 복원  
 
+9. **데이터 저장(LocalStorage) 누락**
+  - 문제: 초기에 LocalStorage 기반 동작을 계획했으나 AI와의 협업 과정에서 새로고침 시 제작 CNL·그래프·풀이 CNL이 유실
+  - 조치: LocalStorage 기반 자동 저장/복원 추가
+    - 키 네임스페이스: `vibe/v1/authorCnl`, `vibe/v1/solveCnl`, `vibe/v1/graph`
+    - 우선순위: URL 해시 > LocalStorage > 기본 예시
+    - 제작 CNL: 변경 시 저장, 초기 마운트 시 복원
+    - 풀이 CNL: `setCnl` 호출 시 저장, 초기 마운트 시 복원
+
 
 #### 학습 내용
   - UI 개선이 곧 시각 플로우 개선이라는 관점에서 한 화면에 함께 보여야 할 요소를 묶는 레이아웃 디자인 학습

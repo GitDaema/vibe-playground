@@ -10,6 +10,11 @@ import ruleSchema from '../graph/validation/rule.schema.json';
 const ajv = new Ajv();
 const validate = ajv.compile(ruleSchema);
 
+// LocalStorage key for solving CNL
+const LS_KEYS = {
+  solveCnl: 'vibe/v1/solveCnl',
+} as const;
+
 interface PuzzleContextType {
   graph: Graph;
   setGraph: (graph: Graph) => void;
@@ -87,6 +92,14 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     } else {
       setValidationErrors([]);
     }
+    // Persist solve CNL (best effort)
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(LS_KEYS.solveCnl, text);
+      }
+    } catch {
+      // ignore persistence failures
+    }
   }, []);
 
   const stopSimulation = useCallback(() => {
@@ -156,6 +169,18 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
   useEffect(() => {
     return () => stopSimulation();
   }, [stopSimulation]);
+
+  // Restore last solving CNL from LocalStorage on mount
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const saved = window.localStorage.getItem(LS_KEYS.solveCnl);
+      if (saved) setCnl(saved);
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = {
     graph,
