@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 import { usePuzzle } from '../core/PuzzleContext';
 
 export default function RuleEditor() {

@@ -142,12 +142,12 @@ export class RuleEngine {
     return `(${conditionStr}) → ${actionStr}.${routeInfo} Entity at: ${this.state.entity.at}`;
   }
 
-  private hasTraversableEdge(from: string | undefined, to: string): boolean {
-    if (!from) return false;
-    const edge = this.graph.edges.find(e => e.source === from && e.target === to);
-    if (!edge) return false;
-    return !edge.requiresItem || this.state.entity.inventory.includes(edge.requiresItem);
-  }
+  // private hasTraversableEdge(from: string | undefined, to: string): boolean {
+  //   if (!from) return false;
+  //   const edge = this.graph.edges.find(e => e.source === from && e.target === to);
+  //   if (!edge) return false;
+  //   return !edge.requiresItem || this.state.entity.inventory.includes(edge.requiresItem);
+  // }
 
   // Compute a shortest directed path from 'from' to 'to' obeying item requirements.
   // Returns array of node ids including both endpoints, or null if unreachable.

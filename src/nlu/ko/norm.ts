@@ -1,4 +1,4 @@
-import { VERBS, NOUNS, PARTICLES, CONJUNCTIONS } from './dict';
+import { VERBS, PARTICLES, CONJUNCTIONS } from './dict';
 
 /**
  * 텍스트를 표준 형식으로 정규화합니다.

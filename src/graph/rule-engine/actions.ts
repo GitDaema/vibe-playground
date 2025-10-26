@@ -3,17 +3,17 @@ import { produce } from 'immer';
 import type { Graph } from '../model';
 
 // 여러 액션을 조합하는 헬퍼 함수
-const applySequentialActions = (state: PuzzleState, graph: Graph, actions: Action[]): PuzzleState => {
-  return produce(state, draft => {
-    for (const action of actions) {
-      const key = Object.keys(action)[0];
-      const executor = EXECUTORS[key];
-      if (executor) {
-        Object.assign(draft, executor(draft, action[key], graph));
-      }
-    }
-  });
-};
+// const applySequentialActions = (state: PuzzleState, graph: Graph, actions: Action[]): PuzzleState => {
+//   return produce(state, draft => {
+//     for (const action of actions) {
+//       const key = Object.keys(action)[0];
+//       const executor = EXECUTORS[key];
+//       if (executor) {
+//         Object.assign(draft, executor(draft, action[key], graph));
+//       }
+//     }
+//   });
+// };
 
 type ActionExecutor = (state: PuzzleState, params: any, graph: Graph) => PuzzleState;
 type ActionValidator = (state: PuzzleState, params: any, graph: Graph) => boolean;

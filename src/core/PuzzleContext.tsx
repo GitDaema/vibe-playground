@@ -130,7 +130,7 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     }
   }, [graph, createInitialState, stopSimulation]);
 
-  const stepSimulation = useCallback((fromRun = false) => {
+  const stepSimulation = useCallback((_fromRun = false) => {
     const currentState = puzzleStateRef.current;
     if (!currentState || !graph.goalNodeId) {
       stopSimulation();

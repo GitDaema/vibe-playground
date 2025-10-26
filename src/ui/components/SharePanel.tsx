@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import{ useState, useCallback, useRef, useEffect } from 'react';
 import { usePuzzle } from '../../core/PuzzleContext';
 import { encodePuzzle, decodePuzzle } from '../../codec/shareCode';
 import { Graph } from '../../graph/model';

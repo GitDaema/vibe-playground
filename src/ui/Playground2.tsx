@@ -171,16 +171,16 @@ const PlaygroundContent: React.FC = () => {
   }, [authorCnl, setGraph]);
 
   // 예시 퍼즐을 즉시 생성하고 풀이 탭으로 전환
-  const handleQuickCreate = useCallback((cnlText: string, switchToSolve = true) => {
-    const { graph: newGraph, errors } = parseAuthoringCnl(cnlText);
-    setAuthorErrors(errors);
-    if (errors.length === 0) {
-      setGraph(newGraph);
-      setAuthorCnl(cnlText);
-      saveGraphToLocalStorage(newGraph);
-      if (switchToSolve) setActiveTab('solve');
-    }
-  }, [setGraph]);
+  // const handleQuickCreate = useCallback((cnlText: string, switchToSolve = true) => {
+  //   const { graph: newGraph, errors } = parseAuthoringCnl(cnlText);
+  //   setAuthorErrors(errors);
+  //   if (errors.length === 0) {
+  //     setGraph(newGraph);
+  //     setAuthorCnl(cnlText);
+  //     saveGraphToLocalStorage(newGraph);
+  //     if (switchToSolve) setActiveTab('solve');
+  //   }
+  // }, [setGraph]);
 
   const hasSolveErrors = parsingErrors.length > 0 || validationErrors.length > 0;
 
