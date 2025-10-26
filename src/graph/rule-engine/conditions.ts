@@ -1,6 +1,7 @@
 import type { PuzzleState, Condition } from './types';
+import type { Graph } from '../model';
 
-type ConditionChecker = (state: PuzzleState, params: any) => boolean;
+type ConditionChecker = (state: PuzzleState, params: any, graph?: Graph) => boolean;
 
 const CHECKERS: Record<string, ConditionChecker> = {
   at: (state, nodeId) => state.entity.at === nodeId,
@@ -12,6 +13,12 @@ const CHECKERS: Record<string, ConditionChecker> = {
   stackNotEmpty: (state) => state.ds.stack.length > 0,
   queueContainsNode: (state, nodeId: string) => state.ds.queue.includes(nodeId),
   stackContainsNode: (state, nodeId: string) => state.ds.stack.includes(nodeId),
+  // 엔티티 이동 타겟 존재 여부
+  targetDefined: (state) => !!state.entity.target,
+  targetNotDefined: (state) => !state.entity.target,
+  // 퍼즐의 최종 목표 노드 설정 여부 (필요시 유지)
+  goalDefined: (_state, _p, graph) => !!graph?.goalNodeId,
+  goalNotDefined: (_state, _p, graph) => !graph?.goalNodeId,
   visited: (state, nodeId: string | 'current') => {
     const targetNodeId = nodeId === 'current' ? state.entity.at : nodeId;
     return state.nodes[targetNodeId]?.tags.includes('visited') || false;
@@ -30,12 +37,12 @@ const CHECKERS: Record<string, ConditionChecker> = {
  * @param condition 확인할 조건
  * @returns 조건 충족 여부
  */
-export function checkCondition(state: PuzzleState, condition: Condition): boolean {
+export function checkCondition(state: PuzzleState, condition: Condition, graph?: Graph): boolean {
   const key = Object.keys(condition)[0];
   const checker = CHECKERS[key];
   if (!checker) {
     console.warn(`Unknown condition checker: ${key}`);
     return false;
   }
-  return checker(state, condition[key]);
+  return checker(state, condition[key], graph);
 }

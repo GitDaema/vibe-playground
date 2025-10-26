@@ -1,10 +1,9 @@
-import { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import { createContext, useState, useContext, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Graph } from '../graph/model';
-import { parseCnl, CnlParsingError } from '../graph/mapper.cnl';
+import { parseCnl, type CnlParsingError } from '../graph/mapper.cnl';
 import type { RuleSet, PuzzleState } from '../graph/rule-engine/types';
-import { RuleEngine } from '../graph/rule-engine/RuleEngine';
-import type { StepResult } from '../graph/rule-engine/RuleEngine';
+import { RuleEngine, type StepResult } from '../graph/rule-engine/RuleEngine';
 import Ajv from 'ajv';
 import ruleSchema from '../graph/validation/rule.schema.json';
 
@@ -23,8 +22,10 @@ interface PuzzleContextType {
   simulationHistory: StepResult[];
   feedbackMessage: string;
   setFeedbackMessage: (message: string) => void;
+  isRunning: boolean;
   runSimulation: () => void;
   stepSimulation: () => void;
+  stopSimulation: () => void;
   resetSimulation: () => void;
 }
 
@@ -53,12 +54,23 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
   const [puzzleState, setPuzzleState] = useState<PuzzleState | null>(null);
   const [simulationHistory, setSimulationHistory] = useState<StepResult[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [isRunning, setIsRunning] = useState(false);
+  const intervalRef = useRef<number | null>(null);
+  const puzzleStateRef = useRef<PuzzleState | null>(null);
+  const TICK_MS = 600; // Slow down run interval slightly for better visibility
+
+  // Keep a ref to the latest puzzleState to avoid stale-closure issues in intervals
+  useEffect(() => {
+    puzzleStateRef.current = puzzleState;
+  }, [puzzleState]);
 
   const createInitialState = useCallback((startNodeId: string): PuzzleState => ({
     entity: { at: startNodeId, inventory: [] },
     nodes: Object.fromEntries(graph.nodes.map(n => [n.id, { tags: n.tags || [] }])),
     ds: {
-      queue: startNodeId ? [startNodeId] : [],
+      // BFS/DFS 초기 상태에서 큐/스택을 비워두고,
+      // 첫 규칙에서 이웃을 추가(큐/스택) → 다음 규칙에서 pop하여 이동하는 흐름을 보장
+      queue: [],
       stack: [],
     },
   }), [graph]);
@@ -77,7 +89,16 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     }
   }, []);
 
+  const stopSimulation = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsRunning(false);
+  }, []);
+
   const resetSimulation = useCallback(() => {
+    stopSimulation();
     const startNode = graph.nodes.find(n => n.id === graph.startNodeId);
     if (startNode) {
       const initialState = createInitialState(startNode.id);
@@ -88,35 +109,53 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
       setPuzzleState(null);
       setSimulationHistory([]);
     }
-  }, [graph, createInitialState]);
+  }, [graph, createInitialState, stopSimulation]);
 
-  const stepSimulation = useCallback(() => {
-    if (!puzzleState || !graph.goalNodeId) return;
-    if (validationErrors.length > 0 || parsingErrors.length > 0) return;
+  const stepSimulation = useCallback((fromRun = false) => {
+    const currentState = puzzleStateRef.current;
+    if (!currentState || !graph.goalNodeId) {
+      stopSimulation();
+      return;
+    }
+    if (validationErrors.length > 0 || parsingErrors.length > 0) {
+      stopSimulation();
+      return;
+    }
 
-    const engine = new RuleEngine(parsedRules, puzzleState, graph);
+    const engine = new RuleEngine(parsedRules, currentState, graph);
     const result = engine.step();
 
     if (result) {
       setPuzzleState(result.newState);
       setSimulationHistory(prev => [...prev, result]);
       if (result.isFinished) {
-        setFeedbackMessage('Goal Reached!');
+        setFeedbackMessage('목표에 도달했습니다! 🎉');
+        stopSimulation();
       }
     } else {
       const feedback = engine.getNoRuleApplicableFeedback();
-      setFeedbackMessage(feedback || "규칙 ?�용 ?�패: ???�상 ?�용??규칙???�습?�다.");
+      setFeedbackMessage(feedback || "더 이상 적용할 규칙이 없습니다.");
+      stopSimulation();
       console.log(feedback);
     }
-  }, [puzzleState, graph, parsedRules, validationErrors, parsingErrors]);
+  }, [puzzleState, graph, parsedRules, validationErrors, parsingErrors, stopSimulation]);
 
   const runSimulation = useCallback(() => {
-    stepSimulation();
-  }, [stepSimulation]);
+    if (isRunning) return;
+    setIsRunning(true);
+    // 첫 스텝은 즉시 실행
+    stepSimulation(true);
+    intervalRef.current = window.setInterval(() => stepSimulation(true), TICK_MS);
+  }, [isRunning, stepSimulation]);
 
   useEffect(() => {
     resetSimulation();
   }, [graph, resetSimulation]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopSimulation();
+  }, [stopSimulation]);
 
   const value = {
     graph,
@@ -130,8 +169,10 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     simulationHistory,
     feedbackMessage,
     setFeedbackMessage,
+    isRunning,
     runSimulation,
     stepSimulation,
+    stopSimulation,
     resetSimulation,
   };
 

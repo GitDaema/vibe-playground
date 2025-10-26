@@ -1,4 +1,4 @@
-import type { Graph } from "../graph/model"; // Import Graph type
+import type { Graph } from "../graph/model";
 
 type Props = {
   graph: Graph;
@@ -23,17 +23,33 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
     <svg className="w-full h-[480px] bg-white rounded-xl shadow border" viewBox="0 0 520 440">
       {/* edges */}
       {graph.edges.map((edge) => {
-        const a = pos[edge.source], b = pos[edge.target];
+        const a = pos[edge.source];
+        const b = pos[edge.target];
         if (!a || !b) return null;
+        const locked = !!edge.requiresItem;
+        const midx = (a.x + b.x) / 2;
+        const midy = (a.y + b.y) / 2;
         return (
-          <g key={edge.id}><line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={locked ? "#f59e0b" : "#cbd5e1"} strokeWidth={2} /> {locked && (<text x={midx} y={midy - 6} textAnchor="middle" fontSize="12">??{edge.requiresItem ? <tspan dx="4" fontSize="10" fill="#6b7280">{edge.requiresItem}</tspan> : null}</text>)} </g>)})
+          <g key={edge.id}>
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={locked ? "#f59e0b" : "#cbd5e1"} strokeWidth={2} />
+            {locked && (
+              <text x={midx} y={midy - 6} textAnchor="middle" fontSize="16">
+                ðŸ”’{edge.requiresItem ? (
+                  <tspan dx="4" fontSize="13" fill="#6b7280">{edge.requiresItem}</tspan>
+                ) : null}
+              </text>
+            )}
+          </g>
+        );
+      })}
+
       {/* nodes */}
       {graph.nodes.map((node) => {
         const p = pos[node.id];
         if (!p) return null;
         const isEntityAtNode = node.id === entityPosition;
         const isGoal = node.id === goalNodeId;
-        
+
         let fill = "#e5e7eb"; // Default
         if (isGoal) fill = "#fca5a5"; // Goal node
         if (isEntityAtNode) fill = "#86efac"; // Entity's current position
@@ -41,7 +57,7 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
         return (
           <g key={node.id}>
             <circle cx={p.x} cy={p.y} r={18} fill={fill} stroke="#334155" strokeWidth={2} />
-            <text x={p.x} y={p.y + 5} textAnchor="middle" fontSize="12" fill="#0f172a" fontWeight={700}>
+            <text x={p.x} y={p.y + 5} textAnchor="middle" fontSize="16" fill="#0f172a" fontWeight={700}>
               {node.id}
             </text>
             {isEntityAtNode && (
@@ -54,7 +70,9 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
                 const visible = items.filter(it => !(inventory || []).includes(it));
                 if (visible.length === 0) return null;
                 return (
-                  <text x={p.x} y={p.y + 22} textAnchor="middle" fontSize="12">?”‘<tspan dx="4" fontSize="10" fill="#6b7280">{visible.join(', ')}</tspan></text>
+                  <text x={p.x} y={p.y + 22} textAnchor="middle" fontSize="16">
+                    ðŸ”‘<tspan dx="4" fontSize="13" fill="#6b7280">{visible.join(', ')}</tspan>
+                  </text>
                 );
               })()
             )}
@@ -64,7 +82,3 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
     </svg>
   );
 }
-
-
-
-

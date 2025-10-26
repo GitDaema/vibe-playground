@@ -5,7 +5,7 @@ import { PreviewPanel } from "./PreviewPanel";
 import { PuzzleProvider, usePuzzle } from "../core/PuzzleContext";
 import { Graph } from "../graph/model";
 import { parseAuthoringCnl, AuthorCnlError } from "../graph/author.cnl";
-import { SharePanel } from "./components/SharePanel";
+import SharePanel from "./components/SharePanel";
 import { decodePuzzle } from "../codec/shareCode";
 
 // 예시 퍼즐: 열쇠-자물쇠 (락을 우회하지 못하도록 구성)

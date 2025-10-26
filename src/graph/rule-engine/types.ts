@@ -35,8 +35,9 @@ export type RuleSet = Rule[];
  */
 export interface PuzzleState {
   entity: {
-    at: string; // 현재 노드 ID
-    inventory: string[];
+    at: string; // 현재 위치
+    inventory: string[]; // 보유 아이템
+    target?: string; // 이동 목표(옵션)
   };
   nodes: {
     [nodeId: string]: {
