@@ -63,6 +63,7 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
   const intervalRef = useRef<number | null>(null);
   const puzzleStateRef = useRef<PuzzleState | null>(null);
   const TICK_MS = 600; // Slow down run interval slightly for better visibility
+  const saveSolveCnlTimerRef = useRef<number | null>(null);
 
   // Keep a ref to the latest puzzleState to avoid stale-closure issues in intervals
   useEffect(() => {
@@ -92,14 +93,19 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
     } else {
       setValidationErrors([]);
     }
-    // Persist solve CNL (best effort)
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(LS_KEYS.solveCnl, text);
-      }
-    } catch {
-      // ignore persistence failures
+    // Persist solve CNL (debounced, best effort)
+    if (saveSolveCnlTimerRef.current) {
+      clearTimeout(saveSolveCnlTimerRef.current);
     }
+    saveSolveCnlTimerRef.current = window.setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(LS_KEYS.solveCnl, text);
+        }
+      } catch {
+        // ignore persistence failures
+      }
+    }, 300);
   }, []);
 
   const stopSimulation = useCallback(() => {
@@ -167,7 +173,13 @@ export const PuzzleProvider: React.FC<PuzzleProviderProps> = ({ children, initia
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => stopSimulation();
+    return () => {
+      stopSimulation();
+      if (saveSolveCnlTimerRef.current) {
+        clearTimeout(saveSolveCnlTimerRef.current);
+        saveSolveCnlTimerRef.current = null;
+      }
+    };
   }, [stopSimulation]);
 
   // Restore last solving CNL from LocalStorage on mount

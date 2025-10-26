@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import GraphCanvas from "./GraphCanvas2";
 import RuleEditor from "./RuleEditor";
 import { PreviewPanel } from "./PreviewPanel";
@@ -67,7 +67,7 @@ const authorExampleDfs = `노드 A, B, C, D, E를 만든다.
 A에서 B로 간선을 잇는다.
 A에서 C로 간선을 잇는다.
 B에서 D로 간선을 잇는다.
-C에서 E로 간선을 잇는다.
+C에서 D로 간선을 잇는다.
 D에서 E로 간선을 잇는다.
 시작은 A, 목표는 E.`;
 
@@ -88,9 +88,13 @@ const PlaygroundContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'solve'>('create');
   const [authorCnl, setAuthorCnl] = useState(authorExampleKeyLock);
   const [authorErrors, setAuthorErrors] = useState<AuthorCnlError[]>([]);
+  const authorPersistRef = useRef<number | null>(null);
+  const didHashLoadRef = useRef(false);
+  const didLocalLoadRef = useRef(false);
 
   // Load from URL hash on initial mount
   useEffect(() => {
+    if (didHashLoadRef.current) return;
     const hash = window.location.hash.slice(1);
     if (hash) {
       try {
@@ -113,10 +117,11 @@ const PlaygroundContent: React.FC = () => {
         console.error(error);
       }
     }
-  }, [setGraph, resetSimulation]);
+  }, []);
 
   // Fallback: restore from LocalStorage when no URL hash present
   useEffect(() => {
+    if (didLocalLoadRef.current) return;
     const hash = window.location.hash.slice(1);
     if (hash) return;
     const savedGraph = loadGraphFromLocalStorage();
@@ -130,17 +135,28 @@ const PlaygroundContent: React.FC = () => {
     } catch {
       // ignore
     }
-  }, [setGraph, resetSimulation]);
+  }, []);
 
-  // Persist authoring CNL on change (best effort)
+  // Persist authoring CNL on change (debounced, best effort)
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(LS_KEYS.authorCnl, authorCnl);
-      }
-    } catch {
-      // ignore persistence failures
+    if (authorPersistRef.current) {
+      clearTimeout(authorPersistRef.current);
     }
+    authorPersistRef.current = window.setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(LS_KEYS.authorCnl, authorCnl);
+        }
+      } catch {
+        // ignore persistence failures
+      }
+    }, 300);
+    return () => {
+      if (authorPersistRef.current) {
+        clearTimeout(authorPersistRef.current);
+        authorPersistRef.current = null;
+      }
+    };
   }, [authorCnl]);
 
 
