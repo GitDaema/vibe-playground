@@ -92,13 +92,36 @@ const PlaygroundContent: React.FC = () => {
   const didHashLoadRef = useRef(false);
   const didLocalLoadRef = useRef(false);
 
+  // 공유 URL 해시에서 코드 추출
+  function extractShareCodeFromHash(hashStr: string): string | null {
+    if (!hashStr) return null;
+    const raw = hashStr.startsWith('#') ? hashStr.slice(1) : hashStr;
+    // 1) /playground?share=...
+    if (raw.startsWith('/playground')) {
+      const qIdx = raw.indexOf('?');
+      if (qIdx >= 0) {
+        const qs = new URLSearchParams(raw.slice(qIdx + 1));
+        return qs.get('share') || qs.get('restore');
+      }
+      return null;
+    }
+    // 2) share=... 또는 restore=...
+    if (raw.startsWith('share=') || raw.startsWith('restore=')) {
+      const qs = new URLSearchParams(raw);
+      return qs.get('share') || qs.get('restore');
+    }
+    // 3) 과거 포맷: 해시 전체가 코드
+    if (raw && !raw.startsWith('/')) return raw;
+    return null;
+  }
+
   // Load from URL hash on initial mount
   useEffect(() => {
     if (didHashLoadRef.current) return;
-    const hash = window.location.hash.slice(1);
-    if (hash) {
+    const code = extractShareCodeFromHash(window.location.hash);
+    if (code) {
       try {
-        const decoded = decodePuzzle(hash);
+        const decoded = decodePuzzle(code);
         const newGraph = new Graph(
           decoded.graph.nodes,
           decoded.graph.edges,
@@ -110,8 +133,8 @@ const PlaygroundContent: React.FC = () => {
         saveGraphToLocalStorage(newGraph);
         resetSimulation();
         // Switch to solve tab for immediate interaction
-        setActiveTab('solve'); 
-        alert(`Puzzle loaded from URL! Switch to "Solve" tab to begin.`);
+        setActiveTab('solve');
+        // alert(`Puzzle loaded from URL! Switch to "Solve" tab to begin.`);
       } catch (error: any) {
         alert(`Failed to load puzzle from URL hash: ${error.message}`);
         console.error(error);
@@ -122,8 +145,8 @@ const PlaygroundContent: React.FC = () => {
   // Fallback: restore from LocalStorage when no URL hash present
   useEffect(() => {
     if (didLocalLoadRef.current) return;
-    const hash = window.location.hash.slice(1);
-    if (hash) return;
+    const codeInHash = extractShareCodeFromHash(window.location.hash);
+    if (codeInHash) return;
     const savedGraph = loadGraphFromLocalStorage();
     if (savedGraph) {
       setGraph(savedGraph);

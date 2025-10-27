@@ -37,7 +37,9 @@ export default function SharePanel() {
     setMessage(null);
     try {
       const code = encodePuzzle(graph);
-      const fullUrl = `${window.location.origin}${window.location.pathname}#${code}`;
+      const base = (import.meta as any).env?.BASE_URL || '/';
+      // 정규형: 리포 루트 + 해시 라우팅 경로에 쿼리 파라미터로 코드 포함
+      const fullUrl = `${window.location.origin}${base}#/playground?share=${encodeURIComponent(code)}`;
       navigator.clipboard.writeText(fullUrl);
       setShareCode(fullUrl);
       setMessage({ type: 'success', text: '전체 URL이 클립보드에 복사되었습니다!' });
@@ -50,6 +52,31 @@ export default function SharePanel() {
     }
   }, [graph, isCopying]);
 
+  function extractShareCode(input: string): string | null {
+    if (!input) return null;
+    const s = input.trim();
+    // URL 내 해시가 포함된 경우 우선 해시만 분리
+    const hash = s.includes('#') ? s.slice(s.indexOf('#') + 1) : s;
+    const h = hash.startsWith('#') ? hash.slice(1) : hash;
+    // 1) #/playground?share=...
+    if (h.startsWith('/playground')) {
+      const qIdx = h.indexOf('?');
+      if (qIdx >= 0) {
+        const qs = new URLSearchParams(h.slice(qIdx + 1));
+        return qs.get('share') || qs.get('restore');
+      }
+      return null;
+    }
+    // 2) #share=... 또는 #restore=...
+    if (h.startsWith('share=') || h.startsWith('restore=')) {
+      const qs = new URLSearchParams(h);
+      return qs.get('share') || qs.get('restore');
+    }
+    // 3) 과거 포맷: 해시 전체가 코드
+    if (h && !h.startsWith('/')) return h;
+    return null;
+  }
+
   const handleLoadCode = useCallback(() => {
     if (!shareCode || isLoading) {
       if (!shareCode) setMessage({ type: 'error', text: '코드를 먼저 붙여넣어 주세요.' });
@@ -60,8 +87,9 @@ export default function SharePanel() {
 
     setTimeout(() => {
       try {
-        const codeToDecode = shareCode.includes('#') ? shareCode.split('#')[1] : shareCode;
-        const decoded = decodePuzzle(codeToDecode.trim());
+        const code = extractShareCode(shareCode);
+        if (!code) throw new Error('유효한 공유 코드가 아닙니다.');
+        const decoded = decodePuzzle(code.trim());
         const newGraph = new Graph(
           decoded.graph.nodes,
           decoded.graph.edges,

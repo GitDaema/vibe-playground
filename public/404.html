@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+    <script>
+      (function () {
+        try {
+          // GH Pages SPA fallback: 깊은 경로를 루트 + 해시로 변환
+          var repo = "/vibe-playground";
+          var p = location.pathname;
+          if (p.startsWith(repo + "/")) {
+            var tail = p.slice(repo.length); // 예: '/playground'
+            var currentHash = location.hash || '';
+            var newHash = '';
+            var tailRoute = '/' + tail.replace(/^\/+/, ''); // '/playground'
+            if (currentHash && currentHash !== '#') {
+              var h = currentHash.startsWith('#') ? currentHash.slice(1) : currentHash;
+              if (h.startsWith('/')) {
+                newHash = h; // 이미 해시 라우트 형태
+              } else if (h.startsWith('share=') || h.startsWith('restore=')) {
+                newHash = tailRoute + '?' + h; // 쿼리 유지
+              } else {
+                newHash = tailRoute + '?share=' + encodeURIComponent(h); // 과거 포맷
+              }
+            } else {
+              newHash = tailRoute;
+            }
+            location.replace(repo + "/#" + newHash);
+          }
+        } catch (e) {
+          // noop
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    Redirecting…
+  </body>
+  </html>

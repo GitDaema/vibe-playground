@@ -5,6 +5,56 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>vibe-playground</title>
+    <script>
+      (function () {
+        try {
+          var repo = "/vibe-playground";
+          var p = location.pathname;
+          // B-1) 과거 잘못된 공유 링크 구제: /vibe-playground/하위 경로로 진입하면 루트+해시로 돌림
+          if (p.startsWith(repo + "/") && p !== repo + "/") {
+            var tail = p.slice(repo.length); // 예: '/playground'
+            var currentHash = location.hash || '';
+            var newHash = '';
+            var tailRoute = '/' + tail.replace(/^\/+/, ''); // '/playground'
+            if (currentHash && currentHash !== '#') {
+              var h = currentHash.startsWith('#') ? currentHash.slice(1) : currentHash;
+              if (h.startsWith('/')) {
+                // 이미 해시 라우트 형태라면 그대로 사용
+                newHash = h;
+              } else if (h.startsWith('share=') || h.startsWith('restore=')) {
+                // 코드만 있으면 쿼리 파라미터로 변환
+                newHash = tailRoute + '?' + h;
+              } else {
+                // 과거 포맷: 해시 전체가 코드
+                newHash = tailRoute + '?share=' + encodeURIComponent(h);
+              }
+            } else {
+              newHash = tailRoute;
+            }
+            location.replace(repo + "/#" + newHash);
+            return; // 네트워크 리다이렉트
+          }
+
+          // B-2) 정규 해시(#/playground?share=...)로 들어온 경우, BrowserRouter가 올바른 경로를 보도록 path만 교체
+          // 서버 재요청 없이 클라이언트 라우팅만 유도
+          if (p === repo + "/") {
+            var h = location.hash || '';
+            var h1 = h.startsWith('#') ? h.slice(1) : h;
+            var needsPlaygroundPath = false;
+            if (h1.startsWith('/playground')) {
+              needsPlaygroundPath = true;
+            } else if (h1.startsWith('share=') || h1.startsWith('restore=')) {
+              needsPlaygroundPath = true;
+            }
+            if (needsPlaygroundPath) {
+              history.replaceState(null, '', repo + '/playground' + h);
+            }
+          }
+        } catch (e) {
+          // fail open
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

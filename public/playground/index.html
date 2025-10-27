@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+    <script>
+      (function () {
+        try {
+          var repo = "/vibe-playground";
+          var currentHash = location.hash || '';
+          var target = repo + "/#/playground";
+          if (currentHash && currentHash !== '#') {
+            var h = currentHash.startsWith('#') ? currentHash.slice(1) : currentHash;
+            if (h.startsWith('/')) {
+              // 이미 해시 라우트 형태라면 그대로 사용
+              target = repo + "/#" + h;
+            } else if (h.startsWith('share=') || h.startsWith('restore=')) {
+              target = repo + "/#/playground?" + h;
+            } else {
+              // 과거 포맷: 해시 전체가 코드
+              target = repo + "/#/playground?share=" + encodeURIComponent(h);
+            }
+          }
+          location.replace(target);
+        } catch (e) {
+          // noop
+        }
+      })();
+    </script>
+  </head>
+  <body>Redirecting…</body>
+  </html>
+
