@@ -87,7 +87,7 @@ const PlaygroundContent: React.FC = () => {
   } = usePuzzle();
 
   const [activeTab, setActiveTab] = useState<'create' | 'solve'>('create');
-  const [authorCnl, setAuthorCnl] = useState(authorExampleKeyLock);
+  const [authorCnl, setAuthorCnl] = useState('');
   const [authorErrors, setAuthorErrors] = useState<AuthorCnlError[]>([]);
   const authorPersistRef = useRef<number | null>(null);
   const didHashLoadRef = useRef(false);
