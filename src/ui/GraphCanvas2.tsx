@@ -40,9 +40,9 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
               strokeDasharray={locked ? "6 4" : undefined}
             />
             {locked && (
-              <text x={midx} y={midy - 6} textAnchor="middle" fontSize="12">
+              <text x={midx} y={midy - 6} textAnchor="middle" fontSize="16">
                 🔒{edge.requiresItem ? (
-                  <tspan dx="4" fontSize="10" fill="#6b7280">{edge.requiresItem}</tspan>
+                  <tspan dx="4" fontSize="13" fill="#6b7280">{edge.requiresItem}</tspan>
                 ) : null}
               </text>
             )}
@@ -64,7 +64,7 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
         return (
           <g key={node.id}>
             <circle cx={p.x} cy={p.y} r={18} fill={fill} stroke="#334155" strokeWidth={2} />
-            <text x={p.x} y={p.y + 5} textAnchor="middle" fontSize="12" fill="#0f172a" fontWeight={700}>
+            <text x={p.x} y={p.y + 5} textAnchor="middle" fontSize="14" fill="#0f172a" fontWeight={700}>
               {node.id}
             </text>
             {isEntityAtNode && (
@@ -77,7 +77,7 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
                 const visible = items.filter(it => !(inventory || []).includes(it));
                 if (visible.length === 0) return null;
                 return (
-                  <text x={p.x} y={p.y + 22} textAnchor="middle" fontSize="12">🔑<tspan dx="4" fontSize="10" fill="#6b7280">{visible.join(', ')}</tspan></text>
+                  <text x={p.x} y={p.y + 22} textAnchor="middle" fontSize="16">🔑<tspan dx="4" fontSize="13" fill="#6b7280">{visible.join(', ')}</tspan></text>
                 );
               })()
             )}
@@ -87,4 +87,3 @@ export default function GraphCanvas({ graph, entityPosition, goalNodeId, invento
     </svg>
   );
 }
-

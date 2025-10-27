@@ -45,12 +45,13 @@ function loadGraphFromLocalStorage(): Graph | null {
 }
 
 // 예시 퍼즐: 열쇠-자물쇠 (락을 우회하지 못하도록 구성)
-const authorExampleKeyLock = `노드 A, B, C, D를 만든다.
+const authorExampleKeyLock = `노드 A, B, C, D, E를 만든다.
 A에서 B로 간선을 잇는다.
-B에서 C로 간선을 잇는다.
+A에서 E로 연결
+B에서 C로 간선 잇는다.
 C에서 D로 간선을 잇는다.
 B→C는 '열쇠'가 필요하다.
-B에 '열쇠'가 있다.
+E에 '열쇠'가 있다.
 시작은 A, 목표는 D.`;
 
 // 예시 퍼즐: BFS(비가중 최단 경로)
@@ -304,7 +305,9 @@ const SolvingPanel: React.FC<{
 
   // 열쇠-자물쇠 퍼즐 예시 정답: A→B→C→D로 진행
   // (B의 아이템은 자동 습득되므로 pickup 규칙 불필요)
-  const keyLockSolutionCnl = `A에 도착하면 B로 이동한다
+  const keyLockSolutionCnl = `열쇠가 있고 A에 도착하면 B로 이동한다
+A에 도착하면 E로 이동한다
+E에 도착하면 A로 이동한다
 B에 도착하면 C로 이동한다
 C에 도착하면 D로 이동한다`;
 

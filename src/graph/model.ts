@@ -51,6 +51,8 @@ export class Graph {
     // 간선이 이미 존재하는지 확인합니다.
     if (!this.edges.some(edge => edge.id === newEdge.id)) { // Check by id
       this.edges.push(newEdge);
+      if (!this.edges.some(e => (e.source === newEdge.target && e.target === newEdge.source) || e.id === `${newEdge.target}${newEdge.source}`)) 
+        this.edges.push({ id: `${newEdge.target}${newEdge.source}`, source: newEdge.target, target: newEdge.source });
     }
   }
 

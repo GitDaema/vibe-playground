@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePuzzle } from '../core/PuzzleContext';
 import { debounce } from '../utils/debounce';
 
